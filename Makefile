@@ -23,19 +23,19 @@ run-client:
 
 docker-run:
 	@echo "Running docker..."
-	@if docker compose up -f deployment/docker-compose.yml --build 2>/dev/null; then \
+	@if docker compose -f deployment/docker-compose.yml up --build 2>/dev/null; then \
 		: ; \
 	else \
 		echo "Falling back to Docker Compose V1"; \
-		docker-compose up --build -f deployment/docker-compose.yml; \
+		docker-compose -f deployment/docker-compose.yml up --build; \
 	fi
 
 docker-down:
-	@if docker compose down -f deployment/docker-compose.yml 2>/dev/null; then \
+	@if docker compose -f deployment/docker-compose.yml down 2>/dev/null; then \
 		: ; \
 	else \
 		echo "Falling back to Docker Compose V1"; \
-		docker-compose down -f deployment/docker-compose.yml; \
+		docker-compose -f deployment/docker-compose.yml down; \
 	fi
 
 clean:

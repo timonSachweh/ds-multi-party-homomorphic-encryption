@@ -26,11 +26,11 @@ type HTTPServer struct {
 // Database holds the configuration for the database connection.
 // The configuration values are loaded from environment variables.
 type Database struct {
-	DatabaseURL                   string `env:"DATABASE_URL,required"`                                              // DatabaseUrl is the URL of the database.
-	Username                      string `env:"DATABASE_USERNAME,required"`                                         // Username is the username for the database.
-	Password                      string `env:"DATABASE_PASSWORD,required"`                                         // Password is the password for the database.
-	DatabaseName                  string `env:"DATABASE_NAME,default=CV"`                                           // DatabaseName is the name of the database.
-	BaseInformationCollectionName string `env:"BASE_INFORMATION_COLLECTION_NAME,default=BaseInformationCollection"` // BaseInformationCollectionName is the name of the base information collection.
+	DatabaseURL                     string `env:"DB_URL,required"`                                        // DatabaseUrl is the URL of the database.
+	Username                        string `env:"DB_USERNAME,required"`                                   // Username is the username for the database.
+	Password                        string `env:"DB_PASSWORD,required"`                                   // Password is the password for the database.
+	DatabaseName                    string `env:"DB_NAME,default=CV"`                                     // DatabaseName is the name of the database.
+	AggregationServerCollectionName string `env:"DB_COLLECTION_NAME,default=AggregationServerCollection"` // BaseInformationCollectionName is the name of the base information collection.
 }
 
 // Load loads the configuration from environment variables.
