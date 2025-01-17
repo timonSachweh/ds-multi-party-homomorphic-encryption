@@ -1,6 +1,8 @@
 package aggregation
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -29,5 +31,10 @@ func (a *aggregationRouteHandlerImpl) Routes() *chi.Mux {
 }
 
 func (a *aggregationRouteHandlerImpl) handlePostClientData(w http.ResponseWriter, r *http.Request) {
-
+	var requestData map[string]interface{}
+	if err := json.NewDecoder(r.Body).Decode(&requestData); err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+	fmt.Println(requestData)
 }
