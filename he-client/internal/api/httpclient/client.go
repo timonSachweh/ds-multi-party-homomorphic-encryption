@@ -28,6 +28,6 @@ func (d *DataSpaceClientServiceImpl) UploadData(body MLModelWeights) error {
 	if err != nil {
 		return err
 	}
-	_, err = http.Post(fmt.Sprintf("%s/upload", d.DataSpaceUrl), "application/json", bytes.NewReader(jsonData))
+	_, err = http.Post(fmt.Sprintf("%s/agg/upload", d.DataSpaceUrl), "application/json", bytes.NewReader(jsonData))
 	return err
 }

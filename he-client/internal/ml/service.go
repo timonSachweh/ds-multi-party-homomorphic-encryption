@@ -34,9 +34,14 @@ func (m *MLServiceImpl) RetrainAndSendUpdatedModelWeights() {
 		return
 	}
 
+	binary, err := encrypt.MarshalBinary()
+	if err != nil {
+		return
+	}
+
 	modelData := httpclient.MLModelWeights{
 		ModelName: "model1",
-		Weights:   *encrypt,
+		Weights:   binary,
 		Length:    len(m.model.AsFloatVector()),
 	}
 

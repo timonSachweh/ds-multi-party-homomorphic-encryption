@@ -2,7 +2,6 @@ package aggregation
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -26,7 +25,7 @@ func NewAggregationRouteHandler(aggregationService AggregationService) Aggregati
 }
 
 func (a *aggregationRouteHandlerImpl) Routes() *chi.Mux {
-	a.router.Post("/", a.handlePostClientData)
+	a.router.Post("/upload", a.handlePostClientData)
 	return a.router
 }
 
@@ -36,5 +35,4 @@ func (a *aggregationRouteHandlerImpl) handlePostClientData(w http.ResponseWriter
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
-	fmt.Println(requestData)
 }
