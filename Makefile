@@ -1,3 +1,13 @@
+define setup_env
+	$(eval ENV_FILE := env/$(1).env)
+	@echo " - setup env $(ENV_FILE)"
+	$(eval include env/$(1).env)
+	$(eval export sed 's/=.*//' env/$(1).env)
+endef
+
+
+
+
 all: build
 
 build:
@@ -13,12 +23,14 @@ build-client:
 	@echo "Building client..."
 	@go build -o bin/he-client he-client/cmd/main.go
 
-run-server:
+server-run:
 	@echo "Running server..."
+	@$(call setup_env,server)
 	@go run aggregation-server/cmd/main.go
 
-run-client:
+client-run:
 	@echo "Running client..."
+	@$(call setup_env,client)
 	@go run he-client/cmd/main.go
 
 docker-run:
