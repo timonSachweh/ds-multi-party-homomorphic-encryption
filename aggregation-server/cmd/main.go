@@ -6,6 +6,7 @@ import (
 
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/aggregation"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/api/http"
+	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/api/httpclient"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/config"
 )
 
@@ -16,7 +17,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	aggregationService := aggregation.NewAggregationService()
+	httpClient := httpclient.NewDataSpaceClientService(cfg.ClientsConfiguration)
+	aggregationService := aggregation.NewAggregationService(httpClient)
 	aggregationRouteHandler := aggregation.NewAggregationRouteHandler(aggregationService)
 
 	server := http.NewServer(cfg.HTTPServer, aggregationRouteHandler)

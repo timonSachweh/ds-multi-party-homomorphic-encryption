@@ -38,6 +38,7 @@ func (h *aggregationUpdateHandlerImpl) handleUpdateModel(w http.ResponseWriter, 
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
+	log.Println("Received model update request")
 	log.Println(requestData.ModelName)
 	w.WriteHeader(http.StatusOK)
 }
