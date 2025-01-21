@@ -1,4 +1,4 @@
-package httpclient
+package entities
 
 type MLModelWeights struct {
 	ModelName string `json:"model_name"`

@@ -7,10 +7,11 @@ import (
 	"net/http"
 
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/config"
+	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/entities"
 )
 
 type DataSpaceClientService interface {
-	UploadData(body MLModelWeights) error
+	UploadData(body entities.MLModelWeights) error
 }
 
 type DataSpaceClientServiceImpl struct {
@@ -23,7 +24,7 @@ func NewDataSpaceClientService(privacyMLConfig config.PrivacyMLConfiguration) Da
 	}
 }
 
-func (d *DataSpaceClientServiceImpl) UploadData(body MLModelWeights) error {
+func (d *DataSpaceClientServiceImpl) UploadData(body entities.MLModelWeights) error {
 	jsonData, err := json.Marshal(body)
 	if err != nil {
 		return err

@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/api/httpclient"
+	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/entities"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/privacy"
 )
 
@@ -39,7 +40,7 @@ func (m *MLServiceImpl) RetrainAndSendUpdatedModelWeights() {
 		return
 	}
 
-	modelData := httpclient.MLModelWeights{
+	modelData := entities.MLModelWeights{
 		ModelName: "model1",
 		Weights:   binary,
 		Length:    len(m.model.AsFloatVector()),

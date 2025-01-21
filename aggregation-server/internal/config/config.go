@@ -12,6 +12,7 @@ import (
 type Configuration struct {
 	HTTPServer
 	Database
+	ClientsConfiguration
 }
 
 // HTTPServer holds the configuration for the HTTP server.
@@ -31,6 +32,10 @@ type Database struct {
 	Password                        string `env:"DB_PASSWORD,required"`                                   // Password is the password for the database.
 	DatabaseName                    string `env:"DB_NAME,default=CV"`                                     // DatabaseName is the name of the database.
 	AggregationServerCollectionName string `env:"DB_COLLECTION_NAME,default=AggregationServerCollection"` // BaseInformationCollectionName is the name of the base information collection.
+}
+
+type ClientsConfiguration struct {
+	Urls []string `env:"CLIENT_SERVICE_URLS,default=http://localhost:8081"`
 }
 
 // Load loads the configuration from environment variables.
