@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/entities"
+	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/ml"
 )
 
 // AggregationUpdateHandler defines the interface for handling aggregation updates.
@@ -15,15 +16,15 @@ type AggregationUpdateHandler interface {
 }
 
 type aggregationUpdateHandlerImpl struct {
-	aggregationUpdateService AggregationUpdateService
-	router                   *chi.Mux
+	mlService ml.MLService
+	router    *chi.Mux
 }
 
 // NewAggregationUpdateHandler creates a new AggregationUpdateHandler with the provided service.
-func NewAggregationUpdateHandler(aggregationUpdateService AggregationUpdateService) AggregationUpdateHandler {
+func NewAggregationUpdateHandler(mlService ml.MLService) AggregationUpdateHandler {
 	return &aggregationUpdateHandlerImpl{
-		aggregationUpdateService: aggregationUpdateService,
-		router:                   chi.NewRouter(),
+		mlService: mlService,
+		router:    chi.NewRouter(),
 	}
 }
 
@@ -39,6 +40,6 @@ func (h *aggregationUpdateHandlerImpl) handleUpdateModel(w http.ResponseWriter, 
 		return
 	}
 	log.Println("Received model update request")
-	log.Println(requestData.ModelName)
+	h.mlService.UpdateModelWeights(requestData)
 	w.WriteHeader(http.StatusOK)
 }

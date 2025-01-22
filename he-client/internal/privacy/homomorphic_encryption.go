@@ -10,7 +10,7 @@ import (
 
 type HEService interface {
 	Encrypt(data []float64) (*rlwe.Ciphertext, error)
-	Decrypt(ciphertext *rlwe.Ciphertext) ([]float64, error)
+	Decrypt(ciphertext *rlwe.Ciphertext, vectorLength int) ([]float64, error)
 }
 
 type HEServiceImpl struct {
@@ -33,8 +33,6 @@ func NewHEService() HEService {
 	}); err != nil {
 		log.Fatal(err)
 	}
-
-	log.Println(params.LogMaxSlots())
 
 	kgen := ckks.NewKeyGenerator(params)
 	sk := kgen.GenSecretKeyNew()
@@ -67,9 +65,9 @@ func (h *HEServiceImpl) Encrypt(data []float64) (*rlwe.Ciphertext, error) {
 	return ciphertext, err
 }
 
-func (h *HEServiceImpl) Decrypt(ciphertext *rlwe.Ciphertext) ([]float64, error) {
+func (h *HEServiceImpl) Decrypt(ciphertext *rlwe.Ciphertext, vectorLength int) ([]float64, error) {
 	plaintext := h.decryptor.DecryptNew(ciphertext)
-	decoded := make([]float64, 5)
+	decoded := make([]float64, vectorLength)
 	if err := h.encoder.Decode(plaintext, decoded); err != nil {
 		return nil, err
 	}

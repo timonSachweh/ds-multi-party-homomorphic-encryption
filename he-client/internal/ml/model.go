@@ -1,6 +1,7 @@
 package ml
 
 import (
+	"log"
 	"math/rand"
 	"time"
 )
@@ -9,6 +10,7 @@ type Model interface {
 	Train()
 	Predict()
 	AsFloatVector() []float64
+	UpdateWeights(weights []float64)
 }
 
 type ModelImpl struct {
@@ -31,6 +33,11 @@ func (m *ModelImpl) Predict() {
 
 func (m *ModelImpl) AsFloatVector() []float64 {
 	return m.module
+}
+
+func (m *ModelImpl) UpdateWeights(weights []float64) {
+	m.module = weights
+	log.Println(m.module)
 }
 
 func generateRandomMatrix(length int, min, max float64) []float64 {
