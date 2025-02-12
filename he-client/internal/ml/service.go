@@ -1,8 +1,8 @@
 package ml
 
 import (
-	"fmt"
 	"log"
+	"os"
 	"os/exec"
 
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/api/httpclient"
@@ -60,10 +60,12 @@ func (m *MLServiceImpl) RetrainAndSendUpdatedModelWeights() {
 }
 
 func (m *MLServiceImpl) Train() {
-	cmd := exec.Command("python3", m.config.PythonScriptPath, fmt.Sprintf("--model-path=%s", m.config.MLModelPath))
+	cmd := exec.Command("python3", m.config.PythonScriptPath)
+	cmd.Env = os.Environ()
 	out, err := cmd.Output()
 
 	if err != nil {
+		log.Println(out)
 		log.Println(err)
 		return
 	}

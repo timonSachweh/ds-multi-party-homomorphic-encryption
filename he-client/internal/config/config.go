@@ -24,7 +24,7 @@ type HTTPServer struct {
 type PrivacyMLConfiguration struct {
 	AggregationServiceUrl string `env:"AGGREGATION_SERVICE_URL,default=http://aggregation-server:8080"`
 	PythonScriptPath      string `env:"PYTHON_SCRIPT_PATH,default=/python-ml/main.py"`
-	MLModelPath           string `env:"ML_MODEL_PATH,default=/python-ml/model.pt"`
+	MLModelPath           string `env:"MODEL_PATH,default=/python-ml/model.pt"`
 }
 
 // Load processes the environment variables and returns the configuration.

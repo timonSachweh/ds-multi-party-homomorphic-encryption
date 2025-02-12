@@ -1,4 +1,4 @@
-import argparse
+import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -21,8 +21,6 @@ def train(args, model, device, train_loader, optimizer, epoch):
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader), loss.item()))
-            if args.dry_run:
-                break
 
 
 def test(model, device, test_loader):
@@ -43,34 +41,27 @@ def test(model, device, test_loader):
         test_loss, correct, len(test_loader.dataset),
         100. * correct / len(test_loader.dataset)))
 
+class dotdict(dict):
+    """dot.notation access to dictionary attributes"""
+    __getattr__ = dict.get
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+
 def main():
     # Training settings
-    parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
-    parser.add_argument('--batch-size', type=int, default=64, metavar='N',
-                        help='input batch size for training (default: 64)')
-    parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
-                        help='input batch size for testing (default: 1000)')
-    parser.add_argument('--epochs', type=int, default=1, metavar='N',
-                        help='number of epochs to train (default: 14)')
-    parser.add_argument('--lr', type=float, default=1.0, metavar='LR',
-                        help='learning rate (default: 1.0)')
-    parser.add_argument('--gamma', type=float, default=0.7, metavar='M',
-                        help='Learning rate step gamma (default: 0.7)')
-    parser.add_argument('--no-cuda', action='store_true', default=False,
-                        help='disables CUDA training')
-    parser.add_argument('--no-mps', action='store_true', default=False,
-                        help='disables macOS GPU training')
-    parser.add_argument('--dry-run', action='store_true', default=False,
-                        help='quickly check a single pass')
-    parser.add_argument('--seed', type=int, default=1, metavar='S',
-                        help='random seed (default: 1)')
-    parser.add_argument('--log-interval', type=int, default=10, metavar='N',
-                        help='how many batches to wait before logging training status')
-    parser.add_argument('--save-model', action='store_true', default=True,
-                        help='For Saving the current Model')
-    parser.add_argument('--model-path', type=str, default="./model.pt", metavar='N',
-                        help='For Saving the current Model')
-    args = parser.parse_args()
+    args = dotdict({
+        'model_path': os.getenv('MODEL_PATH', "./model.pt"),
+        'batch_size': int(os.getenv('BATCH_SIZE', 64)),
+        'test_batch_size': int(os.getenv('TEST_BATCH_SIZE', 1000)),
+        'epochs': int(os.getenv('EPOCHS', 1)),
+        'lr': float(os.getenv('LR', 1.0)),
+        'gamma': float(os.getenv('GAMMA', 0.7)),
+        'no_cuda': bool(os.getenv('NO_CUDA', False)),
+        'no_mps': bool(os.getenv('NO_MPS', False)),
+        'seed': int(os.getenv('SEED', 1)),
+        'log_interval': int(os.getenv('LOG_INTERVAL', 10))
+    })
+
     use_cuda = not args.no_cuda and torch.cuda.is_available()
     use_mps = not args.no_mps and torch.backends.mps.is_available()
 
@@ -112,8 +103,7 @@ def main():
         test(model, device, test_loader)
         scheduler.step()
 
-    if args.save_model:
-        torch.save(model.state_dict(), args.model_path)
+    torch.save(model.state_dict(), args.model_path)
 
 
 if __name__ == '__main__':
