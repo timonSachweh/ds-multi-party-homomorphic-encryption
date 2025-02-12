@@ -29,6 +29,6 @@ func (d *DataSpaceClientServiceImpl) SendAggregatedResultsBack(body entities.MLM
 	if err != nil {
 		return err
 	}
-	_, err = http.Post(fmt.Sprintf("%s/v1/update", d.ClientUrls[0]), "application/json", bytes.NewReader(jsonData))
+	_, err = http.Post(fmt.Sprintf("%s/v1/updated-model", d.ClientUrls[0]), "application/json", bytes.NewReader(jsonData))
 	return err
 }

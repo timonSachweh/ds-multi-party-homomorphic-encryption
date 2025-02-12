@@ -29,7 +29,10 @@ func NewAggregationUpdateHandler(mlService ml.MLService) AggregationUpdateHandle
 }
 
 func (h *aggregationUpdateHandlerImpl) Routes() *chi.Mux {
-	h.router.Post("/", h.handleUpdateModel)
+	h.router.Post("/updated-model", h.handleUpdateModel)
+	h.router.Get("/train", h.handleTrainModel)
+	h.router.Post("/train", h.handleTrainModel)
+	h.router.Put("/train", h.handleTrainModel)
 	return h.router
 }
 
@@ -39,7 +42,13 @@ func (h *aggregationUpdateHandlerImpl) handleUpdateModel(w http.ResponseWriter, 
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
-	log.Println("Received model update request")
+	log.Println("Handler: model update request")
 	h.mlService.UpdateModelWeights(requestData)
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *aggregationUpdateHandlerImpl) handleTrainModel(w http.ResponseWriter, r *http.Request) {
+	log.Println("Handler: model training request")
+	h.mlService.RetrainAndSendUpdatedModelWeights()
 	w.WriteHeader(http.StatusOK)
 }

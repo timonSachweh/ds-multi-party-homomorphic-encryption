@@ -10,7 +10,7 @@ func (s *Server) routes() {
 	s.setupMiddlewares()
 
 	v1 := chi.NewRouter()
-	v1.Mount("/update", s.aggregationUpdateHandler.Routes())
+	v1.Mount("/", s.aggregationUpdateHandler.Routes())
 	s.router.Mount("/v1", v1)
 }
 

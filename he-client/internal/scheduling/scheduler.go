@@ -11,7 +11,7 @@ func InitializeCrons(mlService ml.MLService) *cron.Cron {
 	c := cron.New()
 
 	log.Println("Initializing crons")
-	c.AddFunc("@every 00h00m10s", func() { updateModel(mlService) })
+	c.AddFunc("@every 00h20m0s", func() { updateModel(mlService) })
 	c.Start()
 	log.Println("Crons started")
 

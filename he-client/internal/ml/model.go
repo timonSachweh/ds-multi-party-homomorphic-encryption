@@ -24,7 +24,7 @@ func NewModel() Model {
 }
 
 func (m *ModelImpl) Train() {
-
+	log.Println("Training model")
 }
 
 func (m *ModelImpl) Predict() {

@@ -22,7 +22,7 @@ func main() {
 
 	httpClient := httpclient.NewDataSpaceClientService(cfg.PrivacyMLConfiguration)
 	heService := privacy.NewHEService()
-	mlService := ml.NewMLService(heService, httpClient)
+	mlService := ml.NewMLService(heService, httpClient, cfg.PrivacyMLConfiguration)
 	aggregationUpdateHandler := aggregationupdate.NewAggregationUpdateHandler(mlService)
 
 	c := scheduling.InitializeCrons(mlService)

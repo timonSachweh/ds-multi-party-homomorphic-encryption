@@ -1,9 +1,12 @@
 package ml
 
 import (
+	"fmt"
 	"log"
+	"os/exec"
 
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/api/httpclient"
+	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/config"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/entities"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/privacy"
 )
@@ -19,13 +22,15 @@ type MLServiceImpl struct {
 	model      Model
 	heService  privacy.HEService
 	httpClient httpclient.DataSpaceClientService
+	config     config.PrivacyMLConfiguration
 }
 
-func NewMLService(heService privacy.HEService, httpClient httpclient.DataSpaceClientService) MLService {
+func NewMLService(heService privacy.HEService, httpClient httpclient.DataSpaceClientService, config config.PrivacyMLConfiguration) MLService {
 	return &MLServiceImpl{
 		model:      NewModel(),
 		heService:  heService,
 		httpClient: httpClient,
+		config:     config,
 	}
 }
 
@@ -55,7 +60,15 @@ func (m *MLServiceImpl) RetrainAndSendUpdatedModelWeights() {
 }
 
 func (m *MLServiceImpl) Train() {
-	m.model.Train()
+	cmd := exec.Command("python3", m.config.PythonScriptPath, fmt.Sprintf("--model-path=%s", m.config.MLModelPath))
+	out, err := cmd.Output()
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	log.Println(string(out))
 	log.Println(m.model.AsFloatVector())
 }
 
