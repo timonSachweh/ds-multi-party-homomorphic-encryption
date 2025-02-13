@@ -9,6 +9,7 @@ import (
 type Model interface {
 	Train()
 	Predict()
+	Load(path string)
 	AsFloatVector() []float64
 	UpdateWeights(weights []float64)
 }
@@ -28,6 +29,10 @@ func (m *ModelImpl) Train() {
 }
 
 func (m *ModelImpl) Predict() {
+
+}
+
+func (m *ModelImpl) Load(path string) {
 
 }
 

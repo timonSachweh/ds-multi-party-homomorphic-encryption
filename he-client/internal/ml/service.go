@@ -65,13 +65,11 @@ func (m *MLServiceImpl) Train() {
 	out, err := cmd.Output()
 
 	if err != nil {
-		log.Println(out)
 		log.Println(err)
 		return
 	}
 
 	log.Println(string(out))
-	log.Println(m.model.AsFloatVector())
 }
 
 func (m *MLServiceImpl) Predict() {

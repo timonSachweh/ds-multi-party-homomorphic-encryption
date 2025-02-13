@@ -50,7 +50,7 @@ class dotdict(dict):
 def main():
     # Training settings
     args = dotdict({
-        'model_path': os.getenv('MODEL_PATH', "./model.pt"),
+        'model_path': os.getenv('MODEL_PATH', "./model.onnx"),
         'batch_size': int(os.getenv('BATCH_SIZE', 64)),
         'test_batch_size': int(os.getenv('TEST_BATCH_SIZE', 1000)),
         'epochs': int(os.getenv('EPOCHS', 1)),
@@ -104,6 +104,9 @@ def main():
         scheduler.step()
 
     torch.save(model.state_dict(), args.model_path)
+    onnx_program = torch.onnx.dynamo_export(model, torch.randn(1, 1, 28, 28).to(device=device))
+    onnx_program.save(args.model_path)
+
 
 
 if __name__ == '__main__':
