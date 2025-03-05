@@ -39,7 +39,7 @@ class ModelService():
             return output.argmax(dim=1).item()
 
     def get_model_params(self):
-        return torch.nn.utils.parameters_to_vector(self.model.parameters()).detach().numpy()
+        return torch.nn.utils.parameters_to_vector(self.model.parameters()).detach().cpu().numpy()
     
     def set_model_params(self, params):
         torch.nn.utils.vector_to_parameters(torch.tensor(params).to(self.device), self.model.parameters())

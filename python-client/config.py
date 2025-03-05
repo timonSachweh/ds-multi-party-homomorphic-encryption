@@ -10,6 +10,7 @@ class Config:
 class ServerConfig:
     def __init__(self):
         self.api = os.getenv("PYTHON_API_PATH", "/api")
+        self.port = os.getenv("PYTHON_PORT", 5000)
         self.debug = bool(os.getenv("DEBUG", True))
     
 class ModelConfig:
