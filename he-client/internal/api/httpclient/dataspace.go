@@ -11,7 +11,7 @@ import (
 )
 
 type DataSpaceClientService interface {
-	UploadData(body entities.MLModelWeights) error
+	UploadData(body entities.DataSpaceModelWeights) error
 }
 
 type DataSpaceClientServiceImpl struct {
@@ -24,7 +24,7 @@ func NewDataSpaceClientService(privacyMLConfig config.PrivacyMLConfiguration) Da
 	}
 }
 
-func (d *DataSpaceClientServiceImpl) UploadData(body entities.MLModelWeights) error {
+func (d *DataSpaceClientServiceImpl) UploadData(body entities.DataSpaceModelWeights) error {
 	jsonData, err := json.Marshal(body)
 	if err != nil {
 		return err

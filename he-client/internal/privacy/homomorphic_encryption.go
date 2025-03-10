@@ -9,8 +9,10 @@ import (
 )
 
 type HEService interface {
-	Encrypt(data []float64) (*rlwe.Ciphertext, error)
-	Decrypt(ciphertext *rlwe.Ciphertext, vectorLength int) ([]float64, error)
+	Encrypt32(data []float32) (*rlwe.Ciphertext, error)
+	Encrypt64(data []float64) (*rlwe.Ciphertext, error)
+	Decrypt32(ciphertext *rlwe.Ciphertext, vectorLength int) ([]float32, error)
+	Decrypt64(ciphertext *rlwe.Ciphertext, vectorLength int) ([]float64, error)
 }
 
 type HEServiceImpl struct {
@@ -54,7 +56,15 @@ func NewHEService() HEService {
 	}
 }
 
-func (h *HEServiceImpl) Encrypt(data []float64) (*rlwe.Ciphertext, error) {
+func (h *HEServiceImpl) Encrypt32(data []float32) (*rlwe.Ciphertext, error) {
+	converted := make([]float64, len(data))
+	for i, v := range data {
+		converted[i] = float64(v)
+	}
+	return h.Encrypt64(converted)
+}
+
+func (h *HEServiceImpl) Encrypt64(data []float64) (*rlwe.Ciphertext, error) {
 	pt := ckks.NewPlaintext(h.params, len(data))
 
 	if err := h.encoder.Encode(data, pt); err != nil {
@@ -65,7 +75,20 @@ func (h *HEServiceImpl) Encrypt(data []float64) (*rlwe.Ciphertext, error) {
 	return ciphertext, err
 }
 
-func (h *HEServiceImpl) Decrypt(ciphertext *rlwe.Ciphertext, vectorLength int) ([]float64, error) {
+func (h *HEServiceImpl) Decrypt32(ciphertext *rlwe.Ciphertext, vectorLength int) ([]float32, error) {
+	decoded, err := h.Decrypt64(ciphertext, vectorLength)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]float32, vectorLength)
+	for i, v := range decoded {
+		result[i] = float32(v)
+	}
+	return result, nil
+}
+
+func (h *HEServiceImpl) Decrypt64(ciphertext *rlwe.Ciphertext, vectorLength int) ([]float64, error) {
 	plaintext := h.decryptor.DecryptNew(ciphertext)
 	decoded := make([]float64, vectorLength)
 	if err := h.encoder.Decode(plaintext, decoded); err != nil {

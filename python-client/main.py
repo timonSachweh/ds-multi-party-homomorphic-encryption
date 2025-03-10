@@ -17,17 +17,24 @@ def train_route():
         'message': 'Training complete!'
     }
 
-@app.route(c.server.api + '/model-params')
+@app.route(c.server.api + '/model-params', methods=['GET', 'POST'])
 def model_params_route():
     if request.method == 'GET':
-        return {
+        print(type(model_service.get_model_params().tolist()))
+        response = json.dumps({
             "model_name": c.model.name,
             "version": c.model.version,
-            "params": json.dumps(model_service.get_model_params().tolist())
-        }
+            "weights": model_service.get_model_params().tolist()
+        })
+        print(response)
+        return response
     elif request.method == 'POST':
         body = request.get_json()
-        model_service.set_model_params(np.array(body['params']))
+        print(body)
+        model_service.set_model_params(np.array(body['weights']))
+        return {
+            'message': 'Model parameters updated!'
+        }
 
 @app.route(c.server.api + '/predict', methods=['POST'])
 def predict_route():

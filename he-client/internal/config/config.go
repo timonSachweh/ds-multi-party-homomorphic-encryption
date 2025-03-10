@@ -2,6 +2,7 @@ package config
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/sethvargo/go-envconfig"
@@ -11,6 +12,7 @@ import (
 type Configuration struct {
 	HTTPServer
 	PrivacyMLConfiguration
+	PythonConfiguration
 }
 
 // HTTPServer holds the configuration for the HTTP server.
@@ -23,8 +25,16 @@ type HTTPServer struct {
 
 type PrivacyMLConfiguration struct {
 	AggregationServiceUrl string `env:"AGGREGATION_SERVICE_URL,default=http://aggregation-server:8080"`
-	PythonScriptPath      string `env:"PYTHON_SCRIPT_PATH,default=/python-ml/main.py"`
-	MLModelPath           string `env:"MODEL_PATH,default=/python-ml/model.pt"`
+}
+
+type PythonConfiguration struct {
+	PythonHost    string `env:"PYTHON_HOST,default=http://localhost"`
+	PythonPort    int    `env:"PYTHON_PORT,default=5000"`
+	PythonApiPath string `env:"PYTHON_API_PATH,default=/api"`
+}
+
+func (c PythonConfiguration) BaseUrl() string {
+	return fmt.Sprintf("%s:%d%s", c.PythonHost, c.PythonPort, c.PythonApiPath)
 }
 
 // Load processes the environment variables and returns the configuration.

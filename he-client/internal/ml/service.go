@@ -1,9 +1,8 @@
 package ml
 
 import (
+	"fmt"
 	"log"
-	"os"
-	"os/exec"
 
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/api/httpclient"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/config"
@@ -15,72 +14,74 @@ type MLService interface {
 	Train()
 	Predict()
 	RetrainAndSendUpdatedModelWeights()
-	UpdateModelWeights(entities.MLModelWeights)
+	UpdateModelWeights(entities.DataSpaceModelWeights)
 }
 
 type MLServiceImpl struct {
-	model      Model
-	heService  privacy.HEService
-	httpClient httpclient.DataSpaceClientService
-	config     config.PrivacyMLConfiguration
+	heService    privacy.HEService
+	dspClient    httpclient.DataSpaceClientService
+	pythonClient httpclient.PythonClientService
+	config       config.PrivacyMLConfiguration
 }
 
-func NewMLService(heService privacy.HEService, httpClient httpclient.DataSpaceClientService, config config.PrivacyMLConfiguration) MLService {
+func NewMLService(heService privacy.HEService, dspClient httpclient.DataSpaceClientService, pythonClient httpclient.PythonClientService, config config.PrivacyMLConfiguration) MLService {
 	return &MLServiceImpl{
-		model:      NewModel(),
-		heService:  heService,
-		httpClient: httpClient,
-		config:     config,
+		heService:    heService,
+		dspClient:    dspClient,
+		pythonClient: pythonClient,
+		config:       config,
 	}
 }
 
 func (m *MLServiceImpl) RetrainAndSendUpdatedModelWeights() {
-	m.Train()
-	encrypt, err := m.heService.Encrypt(m.model.AsFloatVector())
+	m.pythonClient.StartTraining()
+	modelWeights, err := m.pythonClient.GetModelWeights()
+	if err != nil {
+		log.Fatal(err)
+	}
+	encrypt, err := m.heService.Encrypt32(modelWeights.Weights)
 	if err != nil {
 		return
 	}
+	fmt.Println("Is encrpyted")
 
 	binary, err := encrypt.MarshalBinary()
 	if err != nil {
 		return
 	}
 
-	modelData := entities.MLModelWeights{
+	modelData := entities.DataSpaceModelWeights{
 		ModelName: "model1",
 		Weights:   binary,
-		Length:    len(m.model.AsFloatVector()),
+		Length:    len(modelWeights.Weights),
 	}
 
-	err = m.httpClient.UploadData(modelData)
+	err = m.dspClient.UploadData(modelData)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 }
 
-func (m *MLServiceImpl) Train() {
-	cmd := exec.Command("python3", m.config.PythonScriptPath)
-	cmd.Env = os.Environ()
-	out, err := cmd.Output()
-
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	log.Println(string(out))
-}
-
 func (m *MLServiceImpl) Predict() {
-	m.model.Predict()
+
 }
 
-func (m *MLServiceImpl) UpdateModelWeights(weights entities.MLModelWeights) {
-	decrypt, err := m.heService.Decrypt(weights.WeightsAsCiphertext(), weights.Length)
+func (m *MLServiceImpl) Train() {
+	m.pythonClient.StartTraining()
+}
+
+func (m *MLServiceImpl) UpdateModelWeights(weights entities.DataSpaceModelWeights) {
+	decrypt, err := m.heService.Decrypt32(weights.WeightsAsCiphertext(), weights.Length)
 	if err != nil {
 		return
 	}
 
-	m.model.UpdateWeights(decrypt)
+	updatedModel := entities.MLModelWeights{
+		ModelName: weights.ModelName,
+		Weights:   decrypt,
+		Length:    weights.Length,
+	}
+
+	m.pythonClient.UpdateModelWeights(updatedModel)
 }

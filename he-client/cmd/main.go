@@ -20,9 +20,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	httpClient := httpclient.NewDataSpaceClientService(cfg.PrivacyMLConfiguration)
+	aggregationClient := httpclient.NewDataSpaceClientService(cfg.PrivacyMLConfiguration)
+	pythonClient := httpclient.NewPythonClientService(cfg.PythonConfiguration)
 	heService := privacy.NewHEService()
-	mlService := ml.NewMLService(heService, httpClient, cfg.PrivacyMLConfiguration)
+	mlService := ml.NewMLService(heService, aggregationClient, pythonClient, cfg.PrivacyMLConfiguration)
 	aggregationUpdateHandler := aggregationupdate.NewAggregationUpdateHandler(mlService)
 
 	c := scheduling.InitializeCrons(mlService)
