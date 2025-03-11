@@ -2,6 +2,7 @@ package privacy
 
 import (
 	"log"
+	"math"
 
 	"github.com/tuneinsight/lattigo/v6/core/rlwe"
 	"github.com/tuneinsight/lattigo/v6/ring"
@@ -9,8 +10,10 @@ import (
 )
 
 type HEService interface {
+	Encrypt(data []float32) ([]*rlwe.Ciphertext, error)
 	Encrypt32(data []float32) (*rlwe.Ciphertext, error)
 	Encrypt64(data []float64) (*rlwe.Ciphertext, error)
+	Decrypt(ciphertext []*rlwe.Ciphertext, vectorLength int) ([]float32, error)
 	Decrypt32(ciphertext *rlwe.Ciphertext, vectorLength int) ([]float32, error)
 	Decrypt64(ciphertext *rlwe.Ciphertext, vectorLength int) ([]float64, error)
 }
@@ -56,6 +59,25 @@ func NewHEService() HEService {
 	}
 }
 
+func (h *HEServiceImpl) Encrypt(data []float32) ([]*rlwe.Ciphertext, error) {
+	converted := make([]float64, len(data))
+	for i, v := range data {
+		converted[i] = float64(v)
+	}
+	splits := int(math.Ceil(float64(len(data)) / float64(h.params.MaxSlots())))
+	ciphertexts := make([]*rlwe.Ciphertext, splits)
+	for i := range int(splits) {
+		start := i * h.params.MaxSlots()
+		end := min((i+1)*h.params.MaxSlots(), len(data))
+		ciphertext, err := h.Encrypt64(converted[start:end])
+		if err != nil {
+			return nil, err
+		}
+		ciphertexts[i] = ciphertext
+	}
+	return ciphertexts, nil
+}
+
 func (h *HEServiceImpl) Encrypt32(data []float32) (*rlwe.Ciphertext, error) {
 	converted := make([]float64, len(data))
 	for i, v := range data {
@@ -65,7 +87,7 @@ func (h *HEServiceImpl) Encrypt32(data []float32) (*rlwe.Ciphertext, error) {
 }
 
 func (h *HEServiceImpl) Encrypt64(data []float64) (*rlwe.Ciphertext, error) {
-	pt := ckks.NewPlaintext(h.params, len(data))
+	pt := ckks.NewPlaintext(h.params, h.params.MaxLevel())
 
 	if err := h.encoder.Encode(data, pt); err != nil {
 		log.Fatal(err)
@@ -73,6 +95,27 @@ func (h *HEServiceImpl) Encrypt64(data []float64) (*rlwe.Ciphertext, error) {
 
 	ciphertext, err := h.encryptor.EncryptNew(pt)
 	return ciphertext, err
+}
+
+func (h *HEServiceImpl) Decrypt(ciphertext []*rlwe.Ciphertext, vectorLength int) ([]float32, error) {
+	decoded := make([]float64, 0)
+	for i, c := range ciphertext {
+		decryptionVectorLen := h.params.MaxSlots()
+		if i == len(ciphertext)-1 {
+			decryptionVectorLen = decryptionVectorLen % len(ciphertext)
+		}
+		dec, err := h.Decrypt64(c, decryptionVectorLen)
+		if err != nil {
+			return nil, err
+		}
+		decoded = append(decoded, dec...)
+	}
+
+	result := make([]float32, len(decoded))
+	for i, v := range decoded {
+		result[i] = float32(v)
+	}
+	return result, nil
 }
 
 func (h *HEServiceImpl) Decrypt32(ciphertext *rlwe.Ciphertext, vectorLength int) ([]float32, error) {

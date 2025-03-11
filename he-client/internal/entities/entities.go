@@ -16,15 +16,19 @@ func (m *MLModelWeights) ToDataSpaceModelWeights() *DataSpaceModelWeights {
 }
 
 type DataSpaceModelWeights struct {
-	ModelName string `json:"model_name"`
-	Length    int    `json:"model_shape"`
-	Weights   []byte `json:"weights"`
+	ModelName string   `json:"model_name"`
+	Length    int      `json:"model_shape"`
+	Weights   [][]byte `json:"weights"`
 }
 
-func (m *DataSpaceModelWeights) WeightsAsCiphertext() *rlwe.Ciphertext {
-	var ciphertext rlwe.Ciphertext
-	ciphertext.UnmarshalBinary(m.Weights)
-	return &ciphertext
+func (m *DataSpaceModelWeights) WeightsAsCiphertext() []*rlwe.Ciphertext {
+	ciphertexts := make([]*rlwe.Ciphertext, len(m.Weights))
+	for i, w := range m.Weights {
+		ciphertext := rlwe.Ciphertext{}
+		ciphertext.UnmarshalBinary(w)
+		ciphertexts[i] = &ciphertext
+	}
+	return ciphertexts
 }
 
 type PredictionRequest struct {

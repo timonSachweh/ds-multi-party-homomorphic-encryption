@@ -39,20 +39,24 @@ func (m *MLServiceImpl) RetrainAndSendUpdatedModelWeights() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	encrypt, err := m.heService.Encrypt32(modelWeights.Weights)
+	encrypt, err := m.heService.Encrypt(modelWeights.Weights)
 	if err != nil {
 		return
 	}
 	fmt.Println("Is encrpyted")
 
-	binary, err := encrypt.MarshalBinary()
-	if err != nil {
-		return
+	dataspaceModelWeightsPayload := make([][]byte, len(encrypt))
+	for i, c := range encrypt {
+		binary, err := c.MarshalBinary()
+		if err != nil {
+			return
+		}
+		dataspaceModelWeightsPayload[i] = binary
 	}
 
 	modelData := entities.DataSpaceModelWeights{
 		ModelName: "model1",
-		Weights:   binary,
+		Weights:   dataspaceModelWeightsPayload,
 		Length:    len(modelWeights.Weights),
 	}
 
@@ -72,7 +76,7 @@ func (m *MLServiceImpl) Train() {
 }
 
 func (m *MLServiceImpl) UpdateModelWeights(weights entities.DataSpaceModelWeights) {
-	decrypt, err := m.heService.Decrypt32(weights.WeightsAsCiphertext(), weights.Length)
+	decrypt, err := m.heService.Decrypt(weights.WeightsAsCiphertext(), weights.Length)
 	if err != nil {
 		return
 	}
