@@ -1,7 +1,6 @@
 package ml
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/api/httpclient"
@@ -43,7 +42,6 @@ func (m *MLServiceImpl) RetrainAndSendUpdatedModelWeights() {
 	if err != nil {
 		return
 	}
-	fmt.Println("Is encrpyted")
 
 	dataspaceModelWeightsPayload := make([][]byte, len(encrypt))
 	for i, c := range encrypt {
@@ -55,7 +53,7 @@ func (m *MLServiceImpl) RetrainAndSendUpdatedModelWeights() {
 	}
 
 	modelData := entities.DataSpaceModelWeights{
-		ModelName: "model1",
+		ModelName: modelWeights.ModelName,
 		Weights:   dataspaceModelWeightsPayload,
 		Length:    len(modelWeights.Weights),
 	}
