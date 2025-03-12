@@ -42,7 +42,7 @@ services:
     image: python-client-1:latest
     build:
       context: ../python-client/
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.mac-gpu
     environment:
       PYTHON_PORT: 8080
     depends_on:

@@ -1,0 +1,25 @@
+FROM fedora:40
+USER 0
+
+RUN dnf -y install dnf-plugins-core && \
+    dnf -y install dnf-plugin-versionlock && \
+    dnf -y install mesa-vulkan-drivers vulkan-loader-devel vulkan-headers vulkan-tools vulkan-loader glslc && \
+    dnf -y copr enable slp/mesa-krunkit fedora-40-aarch64 && \
+    dnf -y downgrade mesa-vulkan-drivers.aarch64 --repo=copr:copr.fedorainfracloud.org:slp:mesa-krunkit && \
+    dnf versionlock mesa-vulkan-drivers && \
+    dnf clean all
+
+RUN dnf -y install python3 python3-pip
+
+RUN pip install gunicorn
+
+WORKDIR /app
+
+COPY ./requirements.txt /app/requirements.txt
+RUN pip install -r requirements.txt
+
+ENV PYTHON_PORT=8080
+
+COPY ./src/ /app
+
+CMD ["sh", "-c", "gunicorn -w 2 -b 0.0.0.0:${PYTHON_PORT} 'main:app'"]
