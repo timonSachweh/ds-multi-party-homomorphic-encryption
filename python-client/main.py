@@ -28,7 +28,7 @@ def model_params_route():
         return response
     elif request.method == 'POST':
         body = request.get_json()
-        model_service.set_model_params(np.array(body['weights']))
+        model_service.set_model_params(np.array(body['weights'], dtype=np.float32))
         return {
             'message': 'Model parameters updated!'
         }

@@ -102,7 +102,7 @@ func (h *HEServiceImpl) Decrypt(ciphertext []*rlwe.Ciphertext, vectorLength int)
 	for i, c := range ciphertext {
 		decryptionVectorLen := h.params.MaxSlots()
 		if i == len(ciphertext)-1 {
-			decryptionVectorLen = decryptionVectorLen % len(ciphertext)
+			decryptionVectorLen = vectorLength % h.params.MaxSlots()
 		}
 		dec, err := h.Decrypt64(c, decryptionVectorLen)
 		if err != nil {

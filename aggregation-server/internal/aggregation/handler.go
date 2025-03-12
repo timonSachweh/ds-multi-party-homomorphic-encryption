@@ -37,4 +37,5 @@ func (a *aggregationRouteHandlerImpl) handlePostClientData(w http.ResponseWriter
 		return
 	}
 	a.aggregationService.AddNewData(requestData)
+	w.WriteHeader(http.StatusOK)
 }
