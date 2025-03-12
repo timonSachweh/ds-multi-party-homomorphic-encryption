@@ -15,7 +15,6 @@ func (s *Server) routes() {
 }
 
 func (s *Server) setupMiddlewares() {
-	s.router.Use(middleware.Logger)
 	s.router.Use(middleware.Heartbeat("/health"))
 	s.router.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"https://*", "http://*"},
@@ -25,4 +24,5 @@ func (s *Server) setupMiddlewares() {
 		AllowCredentials: false,
 		MaxAge:           300, // Maximum value not ignored by any of major browsers
 	}))
+	s.router.Use(middleware.Logger)
 }

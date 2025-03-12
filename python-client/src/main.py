@@ -1,14 +1,24 @@
 import json
 import config
 from flask import Flask
+import logging
 from flask import request
 import ml
 import numpy as np
+from utils import disable_logging
 
 app = Flask(__name__)
+app.logger.setLevel(logging.ERROR)
 c = config.Config()
 
 model_service = ml.ModelService(c.model)
+
+@app.route('/health')
+@disable_logging
+def health_route():
+    return {
+        'message': 'Service is ready'
+    }
 
 @app.route(c.server.api + '/train')
 def train_route():
@@ -41,4 +51,4 @@ def predict_route():
     }
 
 if __name__ == '__main__':
-    app.run(debug=c.server.debug, port=c.server.port)
+    app.run(debug=c.server.debug, host="0.0.0.0", port=c.server.port)

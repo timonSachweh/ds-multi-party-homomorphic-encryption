@@ -3,7 +3,7 @@ from torch.optim.lr_scheduler import StepLR
 import torch.nn.functional as F
 import config
 from .model import Net
-from .utils import get_device, get_transforms
+from utils import get_device, get_transforms, get_kwargs
 from .dataloader import get_dataloaders
 
 
@@ -17,7 +17,7 @@ class ModelService():
     def train(self):
         torch.manual_seed(self.config.seed)
         
-        train_kwargs, test_kwargs = utils.get_kwargs(self.config, self.device)
+        train_kwargs, test_kwargs = get_kwargs(self.config, self.device)
         
         train_loader, test_loader = get_dataloaders(transforms=self.transform, train_kwargs=train_kwargs, test_kwargs=test_kwargs)
 
