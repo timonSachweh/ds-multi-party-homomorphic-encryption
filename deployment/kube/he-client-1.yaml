@@ -35,3 +35,4 @@ spec:
         port: 5001
     ports:
     - containerPort: 5001
+      hostPort: 5001

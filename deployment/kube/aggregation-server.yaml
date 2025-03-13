@@ -13,12 +13,6 @@ spec:
       value: 8080
     - name: CLIENT_SERVICE_URLS
       value: http://he-client-1:8081
-    - name: DB_URL
-      value: mongodb://mongo:27017
-    - name: DB_USERNAME
-      value: agdsmphe
-    - name: DB_PASSWORD
-      value: aöseotiwqr534r5wefsdfvjsb212
     livenessProbe:
       httpGet:
         path: /health

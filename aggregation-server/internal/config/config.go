@@ -11,7 +11,6 @@ import (
 // It embeds the HttpServer and Database structs.
 type Configuration struct {
 	HTTPServer
-	Database
 	ClientsConfiguration
 }
 
@@ -22,16 +21,6 @@ type HTTPServer struct {
 	Port         int           `env:"HTTP_PORT,default=8080"`        // Port is the port on which the server listens.
 	ReadTimeout  time.Duration `env:"HTTP_READ_TIMEOUT,default=1s"`  // ReadTimeout is the maximum duration for reading the entire request.
 	WriteTimeout time.Duration `env:"HTTP_WRITE_TIMEOUT,default=2s"` // WriteTimeout is the maximum duration before timing out writes of the response.
-}
-
-// Database holds the configuration for the database connection.
-// The configuration values are loaded from environment variables.
-type Database struct {
-	DatabaseURL                     string `env:"DB_URL,required"`                                        // DatabaseUrl is the URL of the database.
-	Username                        string `env:"DB_USERNAME,required"`                                   // Username is the username for the database.
-	Password                        string `env:"DB_PASSWORD,required"`                                   // Password is the password for the database.
-	DatabaseName                    string `env:"DB_NAME,default=CV"`                                     // DatabaseName is the name of the database.
-	AggregationServerCollectionName string `env:"DB_COLLECTION_NAME,default=AggregationServerCollection"` // BaseInformationCollectionName is the name of the base information collection.
 }
 
 type ClientsConfiguration struct {

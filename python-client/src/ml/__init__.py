@@ -42,6 +42,7 @@ class ModelService():
         return torch.nn.utils.parameters_to_vector(self.model.parameters()).detach().cpu().numpy()
     
     def set_model_params(self, params):
+        print("Model parameters updated from aggregation server")
         torch.nn.utils.vector_to_parameters(torch.tensor(params).to(self.device), self.model.parameters())
     
 

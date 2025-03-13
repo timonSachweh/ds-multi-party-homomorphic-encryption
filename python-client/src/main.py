@@ -1,4 +1,8 @@
 import json
+import os
+import sys
+
+import torch
 import config
 from flask import Flask
 import logging
@@ -48,6 +52,27 @@ def predict_route():
     body = request.get_json()
     return {
         'prediction': model_service.predict(np.array(body['data'], dtype=np.float32))
+    }
+
+@app.route(c.server.api + '/about')
+def show_about():
+    """
+    Get deployment information, for debugging
+    """
+
+    def bash(command):
+        output = os.popen(command).read()
+        return output
+
+    return {
+        "sys.version": sys.version,
+        "torch.__version__": torch.__version__,
+        "torch.mps.is_avaliable()": torch.backends.mps.is_available(),
+        "torch.cuda.is_available()": torch.cuda.is_available(),
+        "torch.version.cuda": torch.version.cuda,
+        "torch.backends.cudnn.version()": torch.backends.cudnn.version(),
+        "torch.backends.cudnn.enabled": torch.backends.cudnn.enabled,
+        "nvidia-smi": bash('nvidia-smi')
     }
 
 if __name__ == '__main__':

@@ -9,4 +9,5 @@ RUN pip install -r requirements.txt
 
 COPY ./src/ /app
 
-CMD ["sh", "-c", "gunicorn -w 2 -b 0.0.0.0:${PYTHON_PORT} 'main:app'"]
+CMD ["python3", "main.py"]
+#CMD ["sh", "-c", "gunicorn --preload -w 1 -b 0.0.0.0:${PYTHON_PORT} 'main:app'"]
