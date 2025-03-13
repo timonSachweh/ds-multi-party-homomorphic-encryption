@@ -36,10 +36,16 @@ client-run:
 python-client-run:
 	@echo "Running python client..."
 	@$(call setup_env,client)
+	@pyenv activate ml
 	@python3 python-client/src/main.py
 
 python-generate-image-data:
 	@python3 -c "import numpy as np; import random; print([[random.random() for x in range(28)] for y in range(28)])"
+
+detached-run:
+	@./deployment/local-screen-sessions.sh run
+detached-down:
+	@./deployment/local-screen-sessions.sh down
 
 docker-run:
 	@echo "Running docker..."
