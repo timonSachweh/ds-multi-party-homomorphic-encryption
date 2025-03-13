@@ -54,7 +54,7 @@ func (h *aggregationUpdateHandlerImpl) handleUpdateModel(w http.ResponseWriter, 
 
 func (h *aggregationUpdateHandlerImpl) handleTrainModel(w http.ResponseWriter, r *http.Request) {
 	log.Println("Handler: model training request")
-	h.mlService.RetrainAndSendUpdatedModelWeights()
+	go h.mlService.RetrainAndSendUpdatedModelWeights()
 	w.WriteHeader(http.StatusOK)
 }
 
