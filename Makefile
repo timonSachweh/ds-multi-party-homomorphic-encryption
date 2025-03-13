@@ -58,6 +58,21 @@ docker-down:
 		docker-compose -f deployment/docker-compose.yml down; \
 	fi
 
+podman-build:
+	podman build -t he-aggregation-server:latest ./aggregation-server/
+	podman build -t he-client:latest ./he-client/
+	podman build -t he-python-client:latest ./python-client/
+
+podman-run:
+	podman network create --ignore dshe
+	podman play kube --network dshe --replace ./deployment/kube/aggregation-server.yaml
+	podman play kube --network dshe --replace ./deployment/kube/he-client1.yaml
+
+podman-stop:
+	podman play kube --network dshe --down ./deployment/kube/aggregation-server.yaml
+	podman play kube --network dshe --down ./deployment/kube/he-client1.yaml
+	podman network rm dshe
+
 clean:
 	@echo "Cleaning..."
 	@rm -rf bin
