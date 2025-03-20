@@ -1,8 +1,11 @@
 package aggregation
 
 import (
+	"fmt"
+
 	"github.com/robfig/cron/v3"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/api/httpclient"
+	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/config"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/entities"
 )
 
@@ -12,16 +15,16 @@ type AggregationService interface {
 }
 
 type AggregationServiceImpl struct {
-	clientModelWeights []entities.MLModelWeights
-	newData            bool
+	modelManager       map[string]ModelWeightStateManager
+	minRequiredClients int
 	httpClient         httpclient.DataSpaceClientService
 }
 
 // NewAggregationService creates a new instance of AggregationServiceImpl.
-func NewAggregationService(httpClient httpclient.DataSpaceClientService) AggregationService {
+func NewAggregationService(httpClient httpclient.DataSpaceClientService, config config.PrivacyConfiguration) AggregationService {
 	aggregationService := &AggregationServiceImpl{
-		clientModelWeights: make([]entities.MLModelWeights, 0),
-		newData:            false,
+		modelManager:       make(map[string]ModelWeightStateManager, 0),
+		minRequiredClients: config.MinClientsNeeded,
 		httpClient:         httpClient,
 	}
 	c := cron.New()
@@ -32,14 +35,23 @@ func NewAggregationService(httpClient httpclient.DataSpaceClientService) Aggrega
 }
 
 func (a *AggregationServiceImpl) AddNewData(data entities.MLModelWeights) {
-	a.clientModelWeights = append(a.clientModelWeights, data)
-	a.newData = true
+	if data.ModelName == "" {
+		return
+	}
+	if _, ok := a.modelManager[data.ModelName]; !ok {
+		a.modelManager[data.ModelName] = NewModelWeightStateManager(a.minRequiredClients)
+	}
+	a.modelManager[data.ModelName].AddModelWeightsFromClient(data)
 }
 
 func (a *AggregationServiceImpl) UpdateClients() {
-	if !a.newData {
-		return
+	fmt.Println("Updating clients")
+	for _, modelManager := range a.modelManager {
+		modelWeights, clients, err := modelManager.GetAggregatedModelWeights()
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		a.httpClient.SendAggregatedResultsBack(clients, modelWeights)
 	}
-	a.httpClient.SendAggregatedResultsBack(a.clientModelWeights[len(a.clientModelWeights)-1])
-	a.newData = false
 }

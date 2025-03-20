@@ -8,14 +8,16 @@ type MLModelWeights struct {
 	Weights   []float32 `json:"weights"`
 }
 
-func (m *MLModelWeights) ToDataSpaceModelWeights() *DataSpaceModelWeights {
+func (m *MLModelWeights) ToDataSpaceModelWeights(url string) *DataSpaceModelWeights {
 	return &DataSpaceModelWeights{
+		ClientUrl: url,
 		ModelName: m.ModelName,
 		Length:    m.Length,
 	}
 }
 
 type DataSpaceModelWeights struct {
+	ClientUrl string   `json:"client_url"`
 	ModelName string   `json:"model_name"`
 	Length    int      `json:"model_shape"`
 	Weights   [][]byte `json:"weights"`

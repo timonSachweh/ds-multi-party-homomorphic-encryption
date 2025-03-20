@@ -11,7 +11,7 @@ import (
 // It embeds the HttpServer and Database structs.
 type Configuration struct {
 	HTTPServer
-	ClientsConfiguration
+	PrivacyConfiguration
 }
 
 // HTTPServer holds the configuration for the HTTP server.
@@ -23,8 +23,9 @@ type HTTPServer struct {
 	WriteTimeout time.Duration `env:"HTTP_WRITE_TIMEOUT,default=2s"` // WriteTimeout is the maximum duration before timing out writes of the response.
 }
 
-type ClientsConfiguration struct {
-	Urls []string `env:"CLIENT_SERVICE_URLS,default=http://localhost:8081"`
+type PrivacyConfiguration struct {
+	Urls             []string `env:"CLIENT_SERVICE_URLS,default=http://localhost:8081"`
+	MinClientsNeeded int      `env:"MIN_CLIENTS_NEEDED,default=2"`
 }
 
 // Load loads the configuration from environment variables.

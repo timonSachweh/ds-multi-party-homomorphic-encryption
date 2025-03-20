@@ -53,6 +53,7 @@ func (m *MLServiceImpl) RetrainAndSendUpdatedModelWeights() {
 	}
 
 	modelData := entities.DataSpaceModelWeights{
+		ClientUrl: m.config.ExternalUrl,
 		ModelName: modelWeights.ModelName,
 		Weights:   dataspaceModelWeightsPayload,
 		Length:    len(modelWeights.Weights),

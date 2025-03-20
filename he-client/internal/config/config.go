@@ -25,6 +25,7 @@ type HTTPServer struct {
 
 type PrivacyMLConfiguration struct {
 	AggregationServiceUrl string `env:"AGGREGATION_SERVICE_URL,default=http://aggregation-server:8080"`
+	ExternalUrl           string `env:"EXTERNAL_URL,default=http://localhost:8081"`
 }
 
 type PythonConfiguration struct {

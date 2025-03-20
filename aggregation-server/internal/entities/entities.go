@@ -3,9 +3,14 @@ package entities
 import "github.com/tuneinsight/lattigo/v6/core/rlwe"
 
 type MLModelWeights struct {
+	ClientUrl string   `json:"client_url"`
 	ModelName string   `json:"model_name"`
 	Length    int      `json:"model_shape"`
 	Weights   [][]byte `json:"weights"`
+}
+
+func (m *MLModelWeights) GetIdentifier() string {
+	return m.ClientUrl + m.ModelName
 }
 
 func (m *MLModelWeights) WeightsAsCiphertext() []*rlwe.Ciphertext {

@@ -17,8 +17,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	httpClient := httpclient.NewDataSpaceClientService(cfg.ClientsConfiguration)
-	aggregationService := aggregation.NewAggregationService(httpClient)
+	httpClient := httpclient.NewDataSpaceClientService(cfg.PrivacyConfiguration)
+	aggregationService := aggregation.NewAggregationService(httpClient, cfg.PrivacyConfiguration)
 	aggregationRouteHandler := aggregation.NewAggregationRouteHandler(aggregationService)
 
 	server := http.NewServer(cfg.HTTPServer, aggregationRouteHandler)
