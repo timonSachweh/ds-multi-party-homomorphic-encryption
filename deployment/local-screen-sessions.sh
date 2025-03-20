@@ -5,6 +5,9 @@ main_path="$(dirname "$0")/../"
 # Function to start services
 run_services() {
     echo "Starting services..."
+
+    pyenv activate ml
+
     # Start a screen session for each service
     screen -dmS "he-aggregation-service" bash -c "source '${main_path}/env/server.env'; go run ${main_path}aggregation-server/cmd/main.go"
 
