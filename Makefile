@@ -30,12 +30,12 @@ server-run:
 
 client-run:
 	@echo "Running client..."
-	@$(call setup_env,client)
+	@$(call setup_env,client1)
 	@go run he-client/cmd/main.go
 
 python-client-run:
 	@echo "Running python client..."
-	@$(call setup_env,client)
+	@$(call setup_env,client1)
 	@pyenv activate ml
 	@python3 python-client/src/main.py
 
