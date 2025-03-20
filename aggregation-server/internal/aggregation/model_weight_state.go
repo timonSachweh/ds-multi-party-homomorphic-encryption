@@ -4,6 +4,7 @@ import (
 	"errors"
 	"maps"
 	"slices"
+	"time"
 
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/entities"
 )
@@ -15,14 +16,16 @@ type ModelWeightStateManager interface {
 }
 
 type ModelWeightStateImpl struct {
-	weights            map[string]entities.MLModelWeights
-	minRequiredClients int
+	weights             map[string]entities.MLModelWeights
+	updatedModelWeights []entities.MLModelWeights
+	minRequiredClients  int
 }
 
 func NewModelWeightStateManager(minRequiredClients int) ModelWeightStateManager {
 	return &ModelWeightStateImpl{
-		weights:            make(map[string]entities.MLModelWeights),
-		minRequiredClients: minRequiredClients,
+		weights:             make(map[string]entities.MLModelWeights),
+		updatedModelWeights: make([]entities.MLModelWeights, 0),
+		minRequiredClients:  minRequiredClients,
 	}
 }
 
@@ -54,8 +57,13 @@ func (m *ModelWeightStateImpl) GetAggregatedModelWeights() (entities.MLModelWeig
 	clientUrls := make([]string, 0)
 	for _, modelWeights := range m.weights {
 		aggregatedResult = modelWeights
+
+		modelWeights.LastModelUpdate = time.Now()
+		m.updatedModelWeights = append(m.updatedModelWeights, modelWeights)
+
 		clientUrls = append(clientUrls, modelWeights.ClientUrl)
 	}
+	m.weights = make(map[string]entities.MLModelWeights)
 
 	return aggregatedResult, clientUrls, nil
 }

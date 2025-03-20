@@ -1,8 +1,6 @@
 package aggregation
 
 import (
-	"fmt"
-
 	"github.com/robfig/cron/v3"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/api/httpclient"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/config"
@@ -45,11 +43,10 @@ func (a *AggregationServiceImpl) AddNewData(data entities.MLModelWeights) {
 }
 
 func (a *AggregationServiceImpl) UpdateClients() {
-	fmt.Println("Updating clients")
 	for _, modelManager := range a.modelManager {
 		modelWeights, clients, err := modelManager.GetAggregatedModelWeights()
 		if err != nil {
-			fmt.Println(err)
+			// will be the error for "not enough clients to aggregate"
 			continue
 		}
 		a.httpClient.SendAggregatedResultsBack(clients, modelWeights)

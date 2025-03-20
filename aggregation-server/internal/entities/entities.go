@@ -1,12 +1,17 @@
 package entities
 
-import "github.com/tuneinsight/lattigo/v6/core/rlwe"
+import (
+	"time"
+
+	"github.com/tuneinsight/lattigo/v6/core/rlwe"
+)
 
 type MLModelWeights struct {
-	ClientUrl string   `json:"client_url"`
-	ModelName string   `json:"model_name"`
-	Length    int      `json:"model_shape"`
-	Weights   [][]byte `json:"weights"`
+	ClientUrl       string    `json:"client_url"`
+	ModelName       string    `json:"model_name"`
+	Length          int       `json:"model_shape"`
+	Weights         [][]byte  `json:"weights"`
+	LastModelUpdate time.Time `json:"-"`
 }
 
 func (m *MLModelWeights) GetIdentifier() string {
