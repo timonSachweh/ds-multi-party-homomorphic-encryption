@@ -1,4 +1,4 @@
-package privacy
+package services
 
 import (
 	"fmt"

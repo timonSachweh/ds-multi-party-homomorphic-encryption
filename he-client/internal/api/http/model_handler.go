@@ -1,14 +1,14 @@
-package aggregationupdate
+package http
 
 import (
 	"encoding/json"
+	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/services"
 	"io"
 	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/entities"
-	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/ml"
 )
 
 // AggregationUpdateHandler defines the interface for handling aggregation updates.
@@ -17,12 +17,12 @@ type AggregationUpdateHandler interface {
 }
 
 type aggregationUpdateHandlerImpl struct {
-	mlService ml.MLService
+	mlService services.MLService
 	router    *chi.Mux
 }
 
 // NewAggregationUpdateHandler creates a new AggregationUpdateHandler with the provided service.
-func NewAggregationUpdateHandler(mlService ml.MLService) AggregationUpdateHandler {
+func NewAggregationUpdateHandler(mlService services.MLService) AggregationUpdateHandler {
 	return &aggregationUpdateHandlerImpl{
 		mlService: mlService,
 		router:    chi.NewRouter(),

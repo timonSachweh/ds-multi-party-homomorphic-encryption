@@ -2,14 +2,12 @@ package main
 
 import (
 	"context"
+	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/services"
 	"log"
 
-	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/aggregationupdate"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/api/http"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/api/httpclient"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/config"
-	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/ml"
-	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/privacy"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/scheduling"
 )
 
@@ -22,9 +20,9 @@ func main() {
 
 	aggregationClient := httpclient.NewDataSpaceClientService(cfg.PrivacyMLConfiguration)
 	pythonClient := httpclient.NewPythonClientService(cfg.PythonConfiguration)
-	heService := privacy.NewHEService()
-	mlService := ml.NewMLService(heService, aggregationClient, pythonClient, cfg.PrivacyMLConfiguration)
-	aggregationUpdateHandler := aggregationupdate.NewAggregationUpdateHandler(mlService)
+	heService := services.NewHEService()
+	mlService := services.NewMLService(heService, aggregationClient, pythonClient, cfg.PrivacyMLConfiguration)
+	aggregationUpdateHandler := http.NewAggregationUpdateHandler(mlService)
 
 	c := scheduling.InitializeCrons(mlService)
 	defer c.Stop()

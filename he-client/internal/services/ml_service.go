@@ -1,4 +1,4 @@
-package ml
+package services
 
 import (
 	"log"
@@ -6,7 +6,6 @@ import (
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/api/httpclient"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/config"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/entities"
-	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/privacy"
 )
 
 type MLService interface {
@@ -17,13 +16,13 @@ type MLService interface {
 }
 
 type MLServiceImpl struct {
-	heService    privacy.HEService
+	heService    HEService
 	dspClient    httpclient.DataSpaceClientService
 	pythonClient httpclient.PythonClientService
 	config       config.PrivacyMLConfiguration
 }
 
-func NewMLService(heService privacy.HEService, dspClient httpclient.DataSpaceClientService, pythonClient httpclient.PythonClientService, config config.PrivacyMLConfiguration) MLService {
+func NewMLService(heService HEService, dspClient httpclient.DataSpaceClientService, pythonClient httpclient.PythonClientService, config config.PrivacyMLConfiguration) MLService {
 	return &MLServiceImpl{
 		heService:    heService,
 		dspClient:    dspClient,
