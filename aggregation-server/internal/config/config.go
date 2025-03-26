@@ -17,10 +17,10 @@ type Configuration struct {
 // HTTPServer holds the configuration for the HTTP server.
 // The configuration values are loaded from environment variables.
 type HTTPServer struct {
-	IdleTimeout  time.Duration `env:"HTTP_IDLE_TIMEOUT,default=60s"` // IdleTimeout is the maximum amount of time to wait for the next request.
-	Port         int           `env:"HTTP_PORT,default=8080"`        // Port is the port on which the server listens.
-	ReadTimeout  time.Duration `env:"HTTP_READ_TIMEOUT,default=1s"`  // ReadTimeout is the maximum duration for reading the entire request.
-	WriteTimeout time.Duration `env:"HTTP_WRITE_TIMEOUT,default=2s"` // WriteTimeout is the maximum duration before timing out writes of the response.
+	IdleTimeout  time.Duration `env:"HTTP_IDLE_TIMEOUT,default=60s"`  // IdleTimeout is the maximum amount of time to wait for the next request.
+	Port         int           `env:"HTTP_PORT,default=8080"`         // Port is the port on which the server listens.
+	ReadTimeout  time.Duration `env:"HTTP_READ_TIMEOUT,default=10s"`  // ReadTimeout is the maximum duration for reading the entire request.
+	WriteTimeout time.Duration `env:"HTTP_WRITE_TIMEOUT,default=20s"` // WriteTimeout is the maximum duration before timing out writes of the response.
 }
 
 type PrivacyConfiguration struct {

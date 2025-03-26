@@ -11,7 +11,6 @@ import (
 	"syscall"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/aggregation"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/config"
 )
 
@@ -19,11 +18,11 @@ import (
 type Server struct {
 	cfg                config.HTTPServer
 	router             *chi.Mux
-	aggregationHandler aggregation.AggregationHandler
+	aggregationHandler AggregationHandler
 }
 
 // NewServer creates a new HTTP server with the specified configuration and aggregation handler.
-func NewServer(cfg config.HTTPServer, aggregationHandler aggregation.AggregationHandler) *Server {
+func NewServer(cfg config.HTTPServer, aggregationHandler AggregationHandler) *Server {
 	srv := &Server{
 		cfg:                cfg,
 		router:             chi.NewRouter(),

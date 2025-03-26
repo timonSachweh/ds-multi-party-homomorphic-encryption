@@ -1,7 +1,8 @@
-package aggregation
+package http
 
 import (
 	"encoding/json"
+	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/services"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -13,12 +14,12 @@ type AggregationHandler interface {
 }
 
 type aggregationRouteHandlerImpl struct {
-	aggregationService AggregationService
+	aggregationService services.AggregationService
 	router             *chi.Mux
 }
 
 // NewAggregationRouteHandler creates a new AggregationHandler with the provided AggregationService.
-func NewAggregationRouteHandler(aggregationService AggregationService) AggregationHandler {
+func NewAggregationRouteHandler(aggregationService services.AggregationService) AggregationHandler {
 	return &aggregationRouteHandlerImpl{
 		aggregationService: aggregationService,
 		router:             chi.NewRouter(),

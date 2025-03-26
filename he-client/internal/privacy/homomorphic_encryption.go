@@ -1,6 +1,7 @@
 package privacy
 
 import (
+	"fmt"
 	"log"
 	"math"
 
@@ -106,6 +107,7 @@ func (h *HEServiceImpl) Decrypt(ciphertext []*rlwe.Ciphertext, vectorLength int)
 		}
 		dec, err := h.Decrypt64(c, decryptionVectorLen)
 		if err != nil {
+			fmt.Println("Error decrypting ciphertext: ", err)
 			return nil, err
 		}
 		decoded = append(decoded, dec...)

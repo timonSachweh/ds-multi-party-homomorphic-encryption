@@ -1,4 +1,4 @@
-package aggregation
+package services
 
 import (
 	"github.com/robfig/cron/v3"

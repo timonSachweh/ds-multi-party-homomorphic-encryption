@@ -56,6 +56,7 @@ func (p *PythonClientServiceImpl) GetModelWeights() (entities.MLModelWeights, er
 func (p *PythonClientServiceImpl) UpdateModelWeights(modelWeights entities.MLModelWeights) error {
 	jsonData, err := json.Marshal(modelWeights)
 	if err != nil {
+		fmt.Println(err)
 		return err
 	}
 	_, err = http.Post(fmt.Sprintf("%s/model-params", p.PythonServiceUrl), "application/json", bytes.NewReader(jsonData))

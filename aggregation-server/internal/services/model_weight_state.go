@@ -1,4 +1,4 @@
-package aggregation
+package services
 
 import (
 	"errors"
