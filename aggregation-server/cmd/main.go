@@ -19,8 +19,10 @@ func main() {
 
 	httpClient := httpclient.NewDataSpaceClientService(cfg.PrivacyConfiguration)
 	aggregationService := services.NewAggregationService(httpClient, cfg.PrivacyConfiguration)
+	encryptionService := services.NewEncryptionService()
 	aggregationRouteHandler := http.NewAggregationRouteHandler(aggregationService)
+	encryptionRouteHandler := http.NewEncryptionHandler(encryptionService)
 
-	server := http.NewServer(cfg.HTTPServer, aggregationRouteHandler)
+	server := http.NewServer(cfg.HTTPServer, aggregationRouteHandler, encryptionRouteHandler)
 	server.Start(ctx)
 }
