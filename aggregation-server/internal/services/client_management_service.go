@@ -7,20 +7,20 @@ import (
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/entities"
 )
 
-type AggregationService interface {
+type ClientManagementService interface {
 	AddNewData(entities.MLModelWeights)
 	UpdateClients()
 }
 
-type AggregationServiceImpl struct {
+type ClientManagementServiceImpl struct {
 	modelManager       map[string]ModelWeightStateManager
 	minRequiredClients int
 	httpClient         httpclient.DataSpaceClientService
 }
 
 // NewAggregationService creates a new instance of AggregationServiceImpl.
-func NewAggregationService(httpClient httpclient.DataSpaceClientService, config config.PrivacyConfiguration) AggregationService {
-	aggregationService := &AggregationServiceImpl{
+func NewClientManagementService(httpClient httpclient.DataSpaceClientService, config config.PrivacyConfiguration) ClientManagementService {
+	aggregationService := &ClientManagementServiceImpl{
 		modelManager:       make(map[string]ModelWeightStateManager, 0),
 		minRequiredClients: config.MinClientsNeeded,
 		httpClient:         httpClient,
@@ -32,7 +32,7 @@ func NewAggregationService(httpClient httpclient.DataSpaceClientService, config 
 	return aggregationService
 }
 
-func (a *AggregationServiceImpl) AddNewData(data entities.MLModelWeights) {
+func (a *ClientManagementServiceImpl) AddNewData(data entities.MLModelWeights) {
 	if data.ModelName == "" {
 		return
 	}
@@ -42,7 +42,7 @@ func (a *AggregationServiceImpl) AddNewData(data entities.MLModelWeights) {
 	a.modelManager[data.ModelName].AddModelWeightsFromClient(data)
 }
 
-func (a *AggregationServiceImpl) UpdateClients() {
+func (a *ClientManagementServiceImpl) UpdateClients() {
 	for _, modelManager := range a.modelManager {
 		modelWeights, clients, err := modelManager.GetAggregatedModelWeights()
 		if err != nil {

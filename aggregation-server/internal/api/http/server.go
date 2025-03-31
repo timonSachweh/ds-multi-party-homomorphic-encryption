@@ -16,19 +16,19 @@ import (
 
 // Server represents an HTTP server with configuration and aggregation handler.
 type Server struct {
-	cfg                config.HTTPServer
-	router             *chi.Mux
-	aggregationHandler AggregationHandler
-	encryptionHandler  EncryptionHandler
+	cfg                     config.HTTPServer
+	router                  *chi.Mux
+	clientManagementHandler ClientManagementHandler
+	encryptionHandler       EncryptionHandler
 }
 
 // NewServer creates a new HTTP server with the specified configuration and aggregation handler.
-func NewServer(cfg config.HTTPServer, aggregationHandler AggregationHandler, encryptionHandler EncryptionHandler) *Server {
+func NewServer(cfg config.HTTPServer, clientManagementHandler ClientManagementHandler, encryptionHandler EncryptionHandler) *Server {
 	srv := &Server{
-		cfg:                cfg,
-		router:             chi.NewRouter(),
-		aggregationHandler: aggregationHandler,
-		encryptionHandler:  encryptionHandler,
+		cfg:                     cfg,
+		router:                  chi.NewRouter(),
+		clientManagementHandler: clientManagementHandler,
+		encryptionHandler:       encryptionHandler,
 	}
 
 	srv.routes()

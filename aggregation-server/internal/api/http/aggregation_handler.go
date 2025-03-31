@@ -9,34 +9,33 @@ import (
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/entities"
 )
 
-type AggregationHandler interface {
+type ClientManagementHandler interface {
 	Routes() *chi.Mux
 }
 
-type aggregationRouteHandlerImpl struct {
-	aggregationService services.AggregationService
-	router             *chi.Mux
+type clientManagementRouteHandlerImpl struct {
+	clientManagementService services.ClientManagementService
+	router                  *chi.Mux
 }
 
-// NewAggregationRouteHandler creates a new AggregationHandler with the provided AggregationService.
-func NewAggregationRouteHandler(aggregationService services.AggregationService) AggregationHandler {
-	return &aggregationRouteHandlerImpl{
-		aggregationService: aggregationService,
-		router:             chi.NewRouter(),
+func NewAggregationRouteHandler(clientManagementService services.ClientManagementService) ClientManagementHandler {
+	return &clientManagementRouteHandlerImpl{
+		clientManagementService: clientManagementService,
+		router:                  chi.NewRouter(),
 	}
 }
 
-func (a *aggregationRouteHandlerImpl) Routes() *chi.Mux {
+func (a *clientManagementRouteHandlerImpl) Routes() *chi.Mux {
 	a.router.Post("/upload", a.handlePostClientData)
 	return a.router
 }
 
-func (a *aggregationRouteHandlerImpl) handlePostClientData(w http.ResponseWriter, r *http.Request) {
+func (a *clientManagementRouteHandlerImpl) handlePostClientData(w http.ResponseWriter, r *http.Request) {
 	var requestData entities.MLModelWeights
 	if err := json.NewDecoder(r.Body).Decode(&requestData); err != nil {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
-	a.aggregationService.AddNewData(requestData)
+	a.clientManagementService.AddNewData(requestData)
 	w.WriteHeader(http.StatusOK)
 }
