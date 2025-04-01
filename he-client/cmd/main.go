@@ -18,15 +18,28 @@ func main() {
 		log.Fatal(err)
 	}
 
-	aggregationClient := httpclient.NewDataSpaceClientService(cfg.PrivacyMLConfiguration)
+	dataspaceClient := httpclient.NewDataSpaceClientService(cfg.PrivacyMLConfiguration)
 	pythonClient := httpclient.NewPythonClientService(cfg.PythonConfiguration)
 	heService := services.NewHEService()
-	mlService := services.NewMLService(heService, aggregationClient, pythonClient, cfg.PrivacyMLConfiguration)
+	mlService := services.NewMLService(heService, dataspaceClient, pythonClient, cfg.PrivacyMLConfiguration)
 	aggregationUpdateHandler := http.NewAggregationUpdateHandler(mlService)
+	encryptionHandler := http.NewEncryptionHandler(heService)
 
 	c := scheduling.InitializeCrons(mlService)
 	defer c.Stop()
 
-	server := http.NewServer(cfg.HTTPServer, aggregationUpdateHandler)
+	go registerForDataSpaces(heService, dataspaceClient)
+
+	server := http.NewServer(cfg.HTTPServer, aggregationUpdateHandler, encryptionHandler)
 	server.Start(ctx)
+}
+
+func registerForDataSpaces(heService services.HEService, dataSpaceClient httpclient.DataSpaceClientService) {
+	heConfiguration, err := dataSpaceClient.RegisterClient()
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	heService.SetParameters(heConfiguration)
 }

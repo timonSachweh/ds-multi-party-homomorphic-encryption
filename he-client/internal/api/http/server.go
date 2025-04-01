@@ -19,14 +19,16 @@ type Server struct {
 	cfg                      config.HTTPServer
 	router                   *chi.Mux
 	aggregationUpdateHandler AggregationUpdateHandler
+	encryptionHandler        EncryptionHandler
 }
 
 // NewServer creates a new HTTP server with the specified configuration and aggregation handler.
-func NewServer(cfg config.HTTPServer, aggregationUpdateHandler AggregationUpdateHandler) *Server {
+func NewServer(cfg config.HTTPServer, aggregationUpdateHandler AggregationUpdateHandler, encryptionHandler EncryptionHandler) *Server {
 	srv := &Server{
 		cfg:                      cfg,
 		router:                   chi.NewRouter(),
 		aggregationUpdateHandler: aggregationUpdateHandler,
+		encryptionHandler:        encryptionHandler,
 	}
 
 	srv.routes()

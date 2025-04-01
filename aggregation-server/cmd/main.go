@@ -17,10 +17,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	httpClient := httpclient.NewDataSpaceClientService(cfg.PrivacyConfiguration)
-	clientManagementService := services.NewClientManagementService(httpClient, cfg.PrivacyConfiguration)
-	encryptionService := services.NewEncryptionService()
-	clientManagementRouteHandler := http.NewClientManagementRouteHandler(clientManagementService)
+	httpClient := httpclient.NewDataSpaceClientService()
+	encryptionService := services.NewEncryptionService(httpClient)
+	clientManagementService := services.NewClientManagementService(httpClient, encryptionService, cfg.PrivacyConfiguration)
+	clientManagementRouteHandler := http.NewClientManagementRouteHandler(clientManagementService, encryptionService)
 	encryptionRouteHandler := http.NewEncryptionHandler(encryptionService)
 
 	server := http.NewServer(cfg.HTTPServer, clientManagementRouteHandler, encryptionRouteHandler)

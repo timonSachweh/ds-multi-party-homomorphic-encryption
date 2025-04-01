@@ -7,14 +7,10 @@ import (
 
 type PrivacyParams struct {
 	CKKSParameters       ckks.Parameters                 `json:"ckks_parameters"`
-	PublicKeyGenProtocol multiparty.PublicKeyGenProtocol `json:"public_key_gen_protocol"`
-	Crp                  multiparty.PublicKeyGenCRP      `json:"crp"`
+	PublicKeyGenProtocol multiparty.PublicKeyGenProtocol `json:"public_key_gen_protocol"` //TODO: Remove
+	Crp                  multiparty.PublicKeyGenCRP      `json:"crp"`                     //TODO: Remove
 }
 
 type CkgShareExchange struct {
 	Share multiparty.PublicKeyGenShare `json:"share"`
-}
-
-type PublicKeyExchange struct {
-	PublicKey multiparty.PublicKeyGenShare `json:"public_key"`
 }

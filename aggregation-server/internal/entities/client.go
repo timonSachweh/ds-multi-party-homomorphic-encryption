@@ -6,7 +6,7 @@ import (
 	"github.com/tuneinsight/lattigo/v6/core/rlwe"
 )
 
-type MLModelWeights struct {
+type ClientModel struct {
 	ClientUrl       string    `json:"client_url"`
 	ModelName       string    `json:"model_name"`
 	Length          int       `json:"model_shape"`
@@ -14,11 +14,11 @@ type MLModelWeights struct {
 	LastModelUpdate time.Time `json:"-"`
 }
 
-func (m *MLModelWeights) GetIdentifier() string {
+func (m *ClientModel) GetIdentifier() string {
 	return m.ClientUrl + m.ModelName
 }
 
-func (m *MLModelWeights) WeightsAsCiphertext() []*rlwe.Ciphertext {
+func (m *ClientModel) WeightsAsCiphertext() []*rlwe.Ciphertext {
 	ciphertexts := make([]*rlwe.Ciphertext, len(m.Weights))
 	for i, w := range m.Weights {
 		ciphertext := rlwe.Ciphertext{}
@@ -26,4 +26,10 @@ func (m *MLModelWeights) WeightsAsCiphertext() []*rlwe.Ciphertext {
 		ciphertexts[i] = &ciphertext
 	}
 	return ciphertexts
+}
+
+func (m *ClientModel) SetNewWeights(weights [][]byte, length int) {
+	m.Weights = weights
+	m.Length = length
+	m.LastModelUpdate = time.Now()
 }

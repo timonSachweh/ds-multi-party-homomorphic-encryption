@@ -8,22 +8,22 @@ type MLModelWeights struct {
 	Weights   []float32 `json:"weights"`
 }
 
-func (m *MLModelWeights) ToDataSpaceModelWeights(url string) *DataSpaceModelWeights {
-	return &DataSpaceModelWeights{
+func (m *MLModelWeights) ToDataSpaceModelWeights(url string) *ClientModel {
+	return &ClientModel{
 		ClientUrl: url,
 		ModelName: m.ModelName,
 		Length:    m.Length,
 	}
 }
 
-type DataSpaceModelWeights struct {
+type ClientModel struct {
 	ClientUrl string   `json:"client_url"`
 	ModelName string   `json:"model_name"`
 	Length    int      `json:"model_shape"`
 	Weights   [][]byte `json:"weights"`
 }
 
-func (m *DataSpaceModelWeights) WeightsAsCiphertext() []*rlwe.Ciphertext {
+func (m *ClientModel) WeightsAsCiphertext() []*rlwe.Ciphertext {
 	ciphertexts := make([]*rlwe.Ciphertext, len(m.Weights))
 	for i, w := range m.Weights {
 		ciphertext := rlwe.Ciphertext{}

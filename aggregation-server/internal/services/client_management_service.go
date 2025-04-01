@@ -5,25 +5,31 @@ import (
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/api/httpclient"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/config"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/entities"
+	"golang.org/x/crypto/openpgp/errors"
+	"log"
 )
 
 type ClientManagementService interface {
-	AddNewData(entities.MLModelWeights)
+	AddNewData(entities.ClientModel) error
 	UpdateClients()
+	AddClient(clientModel entities.ClientModel) error
+	GetClientsForModel(name string) ([]string, error)
+	StartEncryptionSetupPhaseFor(modelName string)
 }
 
 type ClientManagementServiceImpl struct {
 	modelManager       map[string]ModelWeightStateManager
 	minRequiredClients int
 	httpClient         httpclient.DataSpaceClientService
+	encryptionService  EncryptionService
 }
 
-// NewAggregationService creates a new instance of AggregationServiceImpl.
-func NewClientManagementService(httpClient httpclient.DataSpaceClientService, config config.PrivacyConfiguration) ClientManagementService {
+func NewClientManagementService(httpClient httpclient.DataSpaceClientService, encryptionService EncryptionService, config config.PrivacyConfiguration) ClientManagementService {
 	aggregationService := &ClientManagementServiceImpl{
 		modelManager:       make(map[string]ModelWeightStateManager, 0),
 		minRequiredClients: config.MinClientsNeeded,
 		httpClient:         httpClient,
+		encryptionService:  encryptionService,
 	}
 	c := cron.New()
 	c.AddFunc("@every 00h00m10s", func() { aggregationService.UpdateClients() })
@@ -32,23 +38,60 @@ func NewClientManagementService(httpClient httpclient.DataSpaceClientService, co
 	return aggregationService
 }
 
-func (a *ClientManagementServiceImpl) AddNewData(data entities.MLModelWeights) {
+func (c *ClientManagementServiceImpl) AddNewData(data entities.ClientModel) error {
 	if data.ModelName == "" {
-		return
+		return errors.InvalidArgumentError("model name is required")
 	}
-	if _, ok := a.modelManager[data.ModelName]; !ok {
-		a.modelManager[data.ModelName] = NewModelWeightStateManager(a.minRequiredClients)
+	if _, ok := c.modelManager[data.ModelName]; !ok {
+		return errors.InvalidArgumentError("No such model and client combination is available")
 	}
-	a.modelManager[data.ModelName].AddModelWeightsFromClient(data)
+	c.modelManager[data.ModelName].AddModelWeightsFromClient(data)
+	return nil
 }
 
-func (a *ClientManagementServiceImpl) UpdateClients() {
-	for _, modelManager := range a.modelManager {
+func (c *ClientManagementServiceImpl) UpdateClients() {
+	for _, modelManager := range c.modelManager {
 		modelWeights, clients, err := modelManager.GetAggregatedModelWeights()
 		if err != nil {
 			// will be the error for "not enough clients to aggregate"
 			continue
 		}
-		a.httpClient.SendAggregatedResultsBack(clients, modelWeights)
+		for i := range clients {
+			err = c.httpClient.SendAggregatedResultsBack(clients[i], modelWeights)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
 	}
+}
+
+func (c *ClientManagementServiceImpl) AddClient(clientModel entities.ClientModel) error {
+	if clientModel.ModelName == "" || clientModel.ClientUrl == "" {
+		return errors.InvalidArgumentError("Client model name or client url is empty")
+	}
+	if _, ok := c.modelManager[clientModel.ModelName]; !ok {
+		c.modelManager[clientModel.ModelName] = NewModelWeightStateManager(c.minRequiredClients)
+	}
+	err := c.modelManager[clientModel.ModelName].AddClient(clientModel)
+	return err
+}
+
+func (c *ClientManagementServiceImpl) GetClientsForModel(name string) ([]string, error) {
+	if name == "" {
+		return nil, errors.InvalidArgumentError("model name is required")
+	}
+	if _, ok := c.modelManager[name]; !ok {
+		return nil, errors.InvalidArgumentError("No such model and client combination is available")
+	}
+	return c.modelManager[name].GetClientUrls(), nil
+}
+
+func (c *ClientManagementServiceImpl) StartEncryptionSetupPhaseFor(modelName string) {
+	if c.modelManager[modelName] == nil {
+		return
+	}
+
+	clientUrls := c.modelManager[modelName].GetClientUrls()
+	pk := c.encryptionService.CalculatePublicKey(clientUrls)
+
 }

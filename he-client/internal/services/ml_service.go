@@ -12,7 +12,7 @@ type MLService interface {
 	Train()
 	Predict()
 	RetrainAndSendUpdatedModelWeights()
-	UpdateModelWeights(entities.DataSpaceModelWeights)
+	UpdateModelWeights(entities.ClientModel)
 }
 
 type MLServiceImpl struct {
@@ -51,7 +51,7 @@ func (m *MLServiceImpl) RetrainAndSendUpdatedModelWeights() {
 		dataspaceModelWeightsPayload[i] = binary
 	}
 
-	modelData := entities.DataSpaceModelWeights{
+	modelData := entities.ClientModel{
 		ClientUrl: m.config.ExternalUrl,
 		ModelName: modelWeights.ModelName,
 		Weights:   dataspaceModelWeightsPayload,
@@ -73,7 +73,7 @@ func (m *MLServiceImpl) Train() {
 	m.pythonClient.StartTraining()
 }
 
-func (m *MLServiceImpl) UpdateModelWeights(weights entities.DataSpaceModelWeights) {
+func (m *MLServiceImpl) UpdateModelWeights(weights entities.ClientModel) {
 	decrypt, err := m.heService.Decrypt(weights.WeightsAsCiphertext(), weights.Length)
 	if err != nil {
 		return

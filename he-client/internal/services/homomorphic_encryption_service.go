@@ -2,11 +2,12 @@ package services
 
 import (
 	"fmt"
+	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/entities"
+	"github.com/tuneinsight/lattigo/v6/multiparty"
 	"log"
 	"math"
 
 	"github.com/tuneinsight/lattigo/v6/core/rlwe"
-	"github.com/tuneinsight/lattigo/v6/ring"
 	"github.com/tuneinsight/lattigo/v6/schemes/ckks"
 )
 
@@ -17,47 +18,23 @@ type HEService interface {
 	Decrypt(ciphertext []*rlwe.Ciphertext, vectorLength int) ([]float32, error)
 	Decrypt32(ciphertext *rlwe.Ciphertext, vectorLength int) ([]float32, error)
 	Decrypt64(ciphertext *rlwe.Ciphertext, vectorLength int) ([]float64, error)
+	SetParameters(configuration entities.PrivacyParams)
+	PartialShareAggregation(share entities.CkgShareExchange) entities.CkgShareExchange
 }
 
 type HEServiceImpl struct {
-	params    ckks.Parameters
-	encoder   *ckks.Encoder
-	encryptor *rlwe.Encryptor
-	decryptor *rlwe.Decryptor
-	evaluator *ckks.Evaluator
+	params               ckks.Parameters
+	encoder              *ckks.Encoder
+	encryptor            *rlwe.Encryptor
+	decryptor            *rlwe.Decryptor
+	evaluator            *ckks.Evaluator
+	secretKey            *rlwe.SecretKey
+	publicKeyGenProtocol multiparty.PublicKeyGenProtocol
+	ckgShare             multiparty.PublicKeyGenShare
 }
 
 func NewHEService() HEService {
-	var err error
-	var params ckks.Parameters
-	if params, err = ckks.NewParametersFromLiteral(ckks.ParametersLiteral{
-		LogN:            14,                                    // log2(ring degree)
-		LogQ:            []int{55, 45, 45, 45, 45, 45, 45, 45}, // log2(primes Q) (ciphertext modulus)
-		LogP:            []int{61},                             // log2(primes P) (auxiliary modulus)
-		LogDefaultScale: 45,                                    // log2(scale)
-		RingType:        ring.ConjugateInvariant,
-	}); err != nil {
-		log.Fatal(err)
-	}
-
-	kgen := ckks.NewKeyGenerator(params)
-	sk := kgen.GenSecretKeyNew()
-	pk := kgen.GenPublicKeyNew(sk)
-	encoder := ckks.NewEncoder(params)
-	encryptor := rlwe.NewEncryptor(params, pk)
-	decryptor := rlwe.NewDecryptor(params, sk)
-
-	relinearizationKey := kgen.GenRelinearizationKeyNew(sk)
-	evaluationKeySet := rlwe.NewMemEvaluationKeySet(relinearizationKey)
-	evaluator := ckks.NewEvaluator(params, evaluationKeySet)
-
-	return &HEServiceImpl{
-		params:    params,
-		encoder:   encoder,
-		encryptor: encryptor,
-		decryptor: decryptor,
-		evaluator: evaluator,
-	}
+	return &HEServiceImpl{}
 }
 
 func (h *HEServiceImpl) Encrypt(data []float32) ([]*rlwe.Ciphertext, error) {
@@ -140,4 +117,21 @@ func (h *HEServiceImpl) Decrypt64(ciphertext *rlwe.Ciphertext, vectorLength int)
 		return nil, err
 	}
 	return decoded, nil
+}
+
+func (h *HEServiceImpl) SetParameters(configuration entities.PrivacyParams) {
+	h.params = configuration.CKKSParameters
+	h.encoder = ckks.NewEncoder(h.params)
+	h.publicKeyGenProtocol = multiparty.NewPublicKeyGenProtocol(h.params)
+
+	h.secretKey = rlwe.NewKeyGenerator(h.params).GenSecretKeyNew()
+	h.ckgShare = h.publicKeyGenProtocol.AllocateShare()
+	h.publicKeyGenProtocol.GenShare(h.secretKey, configuration.Crp, &h.ckgShare)
+	//TODO: Add rest of parameters
+}
+
+func (h *HEServiceImpl) PartialShareAggregation(share entities.CkgShareExchange) entities.CkgShareExchange {
+	h.publicKeyGenProtocol.AggregateShares(h.ckgShare, share.Share, &h.ckgShare)
+	log.Println("partial share aggregation done")
+	return share
 }

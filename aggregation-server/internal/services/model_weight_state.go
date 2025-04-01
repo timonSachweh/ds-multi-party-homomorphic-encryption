@@ -10,32 +10,54 @@ import (
 )
 
 type ModelWeightStateManager interface {
-	AddModelWeightsFromClient(entities.MLModelWeights)
-	GetAggregatedModelWeights() (entities.MLModelWeights, []string, error)
+	AddModelWeightsFromClient(entities.ClientModel)
+	AddClient(client entities.ClientModel) error
+	GetAggregatedModelWeights() (entities.ClientModel, []string, error)
 	GetIdentifiers() []string
+	GetClientUrls() []string
 }
 
 type ModelWeightStateImpl struct {
-	weights             map[string]entities.MLModelWeights
-	updatedModelWeights []entities.MLModelWeights
+	clients             map[string]entities.ClientModel
+	updatedModelWeights []entities.ClientModel
 	minRequiredClients  int
 }
 
 func NewModelWeightStateManager(minRequiredClients int) ModelWeightStateManager {
 	return &ModelWeightStateImpl{
-		weights:             make(map[string]entities.MLModelWeights),
-		updatedModelWeights: make([]entities.MLModelWeights, 0),
+		clients:             make(map[string]entities.ClientModel),
+		updatedModelWeights: make([]entities.ClientModel, 0),
 		minRequiredClients:  minRequiredClients,
 	}
 }
 
-func (m *ModelWeightStateImpl) AddModelWeightsFromClient(modelWeights entities.MLModelWeights) {
-	m.weights[modelWeights.GetIdentifier()] = modelWeights
+func (m *ModelWeightStateImpl) AddModelWeightsFromClient(modelWeights entities.ClientModel) {
+	model := m.clients[modelWeights.GetIdentifier()]
+	model.SetNewWeights(modelWeights.Weights, modelWeights.Length)
+}
+
+func (m *ModelWeightStateImpl) AddClient(client entities.ClientModel) error {
+	if client.GetIdentifier() == "" {
+		return errors.New("client identifier is empty")
+	}
+	if _, ok := m.clients[client.GetIdentifier()]; ok {
+		return errors.New("client already exists")
+	}
+	m.clients[client.GetIdentifier()] = client
+	return nil
+}
+
+func (m *ModelWeightStateImpl) GetClientUrls() []string {
+	clientUrls := make([]string, 0)
+	for _, modelWeights := range m.clients {
+		clientUrls = append(clientUrls, modelWeights.ClientUrl)
+	}
+	return clientUrls
 }
 
 func (m *ModelWeightStateImpl) GetUniqueModelNames() []string {
 	uniqueModelNames := make([]string, 0)
-	for _, modelWeights := range m.weights {
+	for _, modelWeights := range m.clients {
 		if slices.Contains(uniqueModelNames, modelWeights.ModelName) {
 			continue
 		}
@@ -45,17 +67,17 @@ func (m *ModelWeightStateImpl) GetUniqueModelNames() []string {
 }
 
 func (m *ModelWeightStateImpl) GetIdentifiers() []string {
-	return slices.Collect(maps.Keys(m.weights))
+	return slices.Collect(maps.Keys(m.clients))
 }
 
-func (m *ModelWeightStateImpl) GetAggregatedModelWeights() (entities.MLModelWeights, []string, error) {
-	if len(m.weights) < m.minRequiredClients {
-		return entities.MLModelWeights{}, nil, errors.New("Not enough clients to aggregate")
+func (m *ModelWeightStateImpl) GetAggregatedModelWeights() (entities.ClientModel, []string, error) {
+	if len(m.clients) < m.minRequiredClients {
+		return entities.ClientModel{}, nil, errors.New("not enough clients to aggregate")
 	}
 
-	aggregatedResult := entities.MLModelWeights{}
+	aggregatedResult := entities.ClientModel{}
 	clientUrls := make([]string, 0)
-	for _, modelWeights := range m.weights {
+	for _, modelWeights := range m.clients {
 		aggregatedResult = modelWeights
 
 		modelWeights.LastModelUpdate = time.Now()
@@ -63,7 +85,7 @@ func (m *ModelWeightStateImpl) GetAggregatedModelWeights() (entities.MLModelWeig
 
 		clientUrls = append(clientUrls, modelWeights.ClientUrl)
 	}
-	m.weights = make(map[string]entities.MLModelWeights)
+	m.clients = make(map[string]entities.ClientModel)
 
 	return aggregatedResult, clientUrls, nil
 }
