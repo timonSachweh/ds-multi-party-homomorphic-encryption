@@ -6,11 +6,19 @@ import (
 )
 
 type PrivacyParams struct {
-	CKKSParameters       ckks.Parameters                 `json:"ckks_parameters"`
-	PublicKeyGenProtocol multiparty.PublicKeyGenProtocol `json:"public_key_gen_protocol"` //TODO: Remove
-	Crp                  multiparty.PublicKeyGenCRP      `json:"crp"`                     //TODO: Remove
+	CKKSParameters ckks.Parameters `json:"ckks_parameters"`
+	//Crs            sampling.PRNG   `json:"crs"`
 }
 
 type CkgShareExchange struct {
 	Share multiparty.PublicKeyGenShare `json:"share"`
+}
+
+type PublicKeyExchange struct {
+	PublicKey multiparty.PublicKeyGenShare `json:"public_key"`
+}
+
+type RelinearizationKeyShare struct {
+	ShareOne multiparty.RelinearizationKeyGenShare `json:"share_one"`
+	ShareTwo multiparty.RelinearizationKeyGenShare `json:"share_two"`
 }

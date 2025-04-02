@@ -92,6 +92,8 @@ func (c *ClientManagementServiceImpl) StartEncryptionSetupPhaseFor(modelName str
 	}
 
 	clientUrls := c.modelManager[modelName].GetClientUrls()
-	pk := c.encryptionService.CalculatePublicKey(clientUrls)
+	c.encryptionService.CalculatePublicKey(clientUrls)
+	c.encryptionService.PublishPublicKey(clientUrls)
+	c.encryptionService.CalculateRelinearizationKeys(clientUrls)
 
 }

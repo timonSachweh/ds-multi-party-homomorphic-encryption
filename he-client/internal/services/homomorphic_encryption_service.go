@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/entities"
 	"github.com/tuneinsight/lattigo/v6/multiparty"
+	"github.com/tuneinsight/lattigo/v6/utils/sampling"
 	"log"
 	"math"
 
@@ -20,17 +21,27 @@ type HEService interface {
 	Decrypt64(ciphertext *rlwe.Ciphertext, vectorLength int) ([]float64, error)
 	SetParameters(configuration entities.PrivacyParams)
 	PartialShareAggregation(share entities.CkgShareExchange) entities.CkgShareExchange
+	PartialRelinKeyAggregation(share entities.RelinearizationKeyShare) entities.RelinearizationKeyShare
+	SetPublicKey(key entities.PublicKeyExchange) error
 }
 
 type HEServiceImpl struct {
-	params               ckks.Parameters
-	encoder              *ckks.Encoder
-	encryptor            *rlwe.Encryptor
-	decryptor            *rlwe.Decryptor
-	evaluator            *ckks.Evaluator
-	secretKey            *rlwe.SecretKey
-	publicKeyGenProtocol multiparty.PublicKeyGenProtocol
-	ckgShare             multiparty.PublicKeyGenShare
+	params                        ckks.Parameters
+	encoder                       *ckks.Encoder
+	encryptor                     *rlwe.Encryptor
+	decryptor                     *rlwe.Decryptor
+	evaluator                     *ckks.Evaluator
+	secretKey                     *rlwe.SecretKey
+	publicKeyGenProtocol          multiparty.PublicKeyGenProtocol
+	ckgShare                      multiparty.PublicKeyGenShare
+	relinearizationKeyGenProtocol multiparty.RelinearizationKeyGenProtocol
+	rlkEphemSk                    *rlwe.SecretKey
+	rkgShareOne                   multiparty.RelinearizationKeyGenShare
+	rkgShareTwo                   multiparty.RelinearizationKeyGenShare
+	crp                           multiparty.PublicKeyGenCRP
+	crs                           sampling.PRNG
+	keyCrp                        multiparty.PublicKeyGenCRP
+	relinCrp                      multiparty.RelinearizationKeyGenCRP
 }
 
 func NewHEService() HEService {
@@ -121,17 +132,39 @@ func (h *HEServiceImpl) Decrypt64(ciphertext *rlwe.Ciphertext, vectorLength int)
 
 func (h *HEServiceImpl) SetParameters(configuration entities.PrivacyParams) {
 	h.params = configuration.CKKSParameters
+	crs, err := sampling.NewKeyedPRNG([]byte{'l', 'a', 't', 't', 'i', 'g', 'o'})
+	if err != nil {
+		panic(err)
+	}
+	h.crs = crs
 	h.encoder = ckks.NewEncoder(h.params)
-	h.publicKeyGenProtocol = multiparty.NewPublicKeyGenProtocol(h.params)
 
+	h.publicKeyGenProtocol = multiparty.NewPublicKeyGenProtocol(h.params)
 	h.secretKey = rlwe.NewKeyGenerator(h.params).GenSecretKeyNew()
 	h.ckgShare = h.publicKeyGenProtocol.AllocateShare()
-	h.publicKeyGenProtocol.GenShare(h.secretKey, configuration.Crp, &h.ckgShare)
-	//TODO: Add rest of parameters
+	h.keyCrp = h.publicKeyGenProtocol.SampleCRP(h.crs)
+	h.publicKeyGenProtocol.GenShare(h.secretKey, h.keyCrp, &h.ckgShare)
+
+	h.relinearizationKeyGenProtocol = multiparty.NewRelinearizationKeyGenProtocol(h.params)
+	h.relinCrp = h.relinearizationKeyGenProtocol.SampleCRP(h.crs)
+	h.rlkEphemSk, h.rkgShareOne, h.rkgShareTwo = h.relinearizationKeyGenProtocol.AllocateShare()
+	h.relinearizationKeyGenProtocol.GenShareRoundOne(h.secretKey, h.relinCrp, h.rlkEphemSk, &h.rkgShareOne)
+}
+
+func (h *HEServiceImpl) SetPublicKey(key entities.PublicKeyExchange) error {
+	//TODO: persist public key
+	return nil
 }
 
 func (h *HEServiceImpl) PartialShareAggregation(share entities.CkgShareExchange) entities.CkgShareExchange {
 	h.publicKeyGenProtocol.AggregateShares(h.ckgShare, share.Share, &h.ckgShare)
 	log.Println("partial share aggregation done")
+	return share
+}
+
+func (h *HEServiceImpl) PartialRelinKeyAggregation(share entities.RelinearizationKeyShare) entities.RelinearizationKeyShare {
+	h.relinearizationKeyGenProtocol.AggregateShares(h.rkgShareOne, share.ShareOne, &share.ShareOne)
+	h.relinearizationKeyGenProtocol.AggregateShares(h.rkgShareTwo, share.ShareTwo, &share.ShareTwo)
+	log.Println("partial relinearization key aggregation done")
 	return share
 }

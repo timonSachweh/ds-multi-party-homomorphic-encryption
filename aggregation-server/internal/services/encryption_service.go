@@ -14,18 +14,20 @@ import (
 type EncryptionService interface {
 	CalculatePublicKey(clients []string) *rlwe.PublicKey
 	GetInformation() entities.PrivacyParams
+	PublishPublicKey(urls []string)
+	CalculateRelinearizationKeys(urls []string) *rlwe.MemEvaluationKeySet
 }
 
 type encryptionServiceImpl struct {
 	httpClient           httpclient.DataSpaceClientService
 	params               ckks.Parameters
 	crs                  *sampling.KeyedPRNG
-	crp                  multiparty.PublicKeyGenCRP
 	encoder              *ckks.Encoder
 	publicKeyGenProtocol multiparty.PublicKeyGenProtocol
 
 	publicKeyShareCombined multiparty.PublicKeyGenShare
 	publicKey              *rlwe.PublicKey
+	evk                    *rlwe.MemEvaluationKeySet
 }
 
 func NewEncryptionService(httpClient httpclient.DataSpaceClientService) EncryptionService {
@@ -47,13 +49,11 @@ func NewEncryptionService(httpClient httpclient.DataSpaceClientService) Encrypti
 	}
 
 	multipartyPublicKeyGenProtocol := multiparty.NewPublicKeyGenProtocol(params)
-	crp := multipartyPublicKeyGenProtocol.SampleCRP(crs)
 
 	return &encryptionServiceImpl{
 		httpClient:           httpClient,
 		params:               params,
 		crs:                  crs,
-		crp:                  crp,
 		encoder:              ckks.NewEncoder(params),
 		publicKeyGenProtocol: multipartyPublicKeyGenProtocol,
 		publicKey:            rlwe.NewPublicKey(params),
@@ -62,17 +62,29 @@ func NewEncryptionService(httpClient httpclient.DataSpaceClientService) Encrypti
 
 func (e *encryptionServiceImpl) GetInformation() entities.PrivacyParams {
 	return entities.PrivacyParams{
-		CKKSParameters:       e.params,
-		PublicKeyGenProtocol: e.publicKeyGenProtocol,
-		Crp:                  e.crp,
+		CKKSParameters: e.params,
+		//Crs:            e.crs,
 	}
 }
 
 func (e *encryptionServiceImpl) CalculatePublicKey(clients []string) *rlwe.PublicKey {
 	e.calculateSharedCgkShare(clients)
 	e.publicKey = rlwe.NewPublicKey(e.params)
-	e.publicKeyGenProtocol.GenPublicKey(e.publicKeyShareCombined, e.crp, e.publicKey)
+	crp := e.publicKeyGenProtocol.SampleCRP(e.crs)
+	e.publicKeyGenProtocol.GenPublicKey(e.publicKeyShareCombined, crp, e.publicKey)
 	return e.publicKey
+}
+
+func (e *encryptionServiceImpl) PublishPublicKey(urls []string) {
+	publicKey := entities.PublicKeyExchange{
+		PublicKey: e.publicKeyShareCombined,
+	}
+	for _, url := range urls {
+		err := e.httpClient.SendPublicKeyToClient(url, &publicKey)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 }
 
 func (e *encryptionServiceImpl) calculateSharedCgkShare(clients []string) *multiparty.PublicKeyGenShare {
@@ -89,4 +101,28 @@ func (e *encryptionServiceImpl) calculateSharedCgkShare(clients []string) *multi
 	}
 	log.Println("Share exchange complete")
 	return &e.publicKeyShareCombined
+}
+
+func (e *encryptionServiceImpl) CalculateRelinearizationKeys(clients []string) *rlwe.MemEvaluationKeySet {
+	rkg := multiparty.NewRelinearizationKeyGenProtocol(e.params)
+	_, rkgCombined1, rkgCombined2 := rkg.AllocateShare()
+
+	share := entities.RelinearizationKeyShare{
+		ShareOne: rkgCombined1,
+		ShareTwo: rkgCombined2,
+	}
+
+	for _, client := range clients {
+		err := e.httpClient.SendPartialRelinearizationKey(client, &share)
+		if err != nil {
+			return nil
+		}
+	}
+	rlk := rlwe.NewRelinearizationKey(e.params)
+	rkg.GenRelinearizationKey(share.ShareOne, share.ShareTwo, rlk)
+
+	e.evk = rlwe.NewMemEvaluationKeySet(rlk)
+	log.Println("Relination Key Set created")
+
+	return e.evk
 }

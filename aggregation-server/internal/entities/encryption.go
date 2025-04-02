@@ -3,12 +3,12 @@ package entities
 import (
 	"github.com/tuneinsight/lattigo/v6/multiparty"
 	"github.com/tuneinsight/lattigo/v6/schemes/ckks"
+	"github.com/tuneinsight/lattigo/v6/utils/sampling"
 )
 
 type PrivacyParams struct {
-	CKKSParameters       ckks.Parameters                 `json:"ckks_parameters"`
-	PublicKeyGenProtocol multiparty.PublicKeyGenProtocol `json:"public_key_gen_protocol"`
-	Crp                  multiparty.PublicKeyGenCRP      `json:"crp"`
+	CKKSParameters ckks.Parameters `json:"ckks_parameters"`
+	Crs            sampling.PRNG   `json:"crs"`
 }
 
 type CkgShareExchange struct {
@@ -17,4 +17,9 @@ type CkgShareExchange struct {
 
 type PublicKeyExchange struct {
 	PublicKey multiparty.PublicKeyGenShare `json:"public_key"`
+}
+
+type RelinearizationKeyShare struct {
+	ShareOne multiparty.RelinearizationKeyGenShare `json:"share_one"`
+	ShareTwo multiparty.RelinearizationKeyGenShare `json:"share_two"`
 }
