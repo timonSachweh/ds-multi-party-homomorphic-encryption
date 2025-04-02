@@ -15,6 +15,7 @@ type ClientManagementService interface {
 	AddClient(clientModel entities.ClientModel) error
 	GetClientsForModel(name string) ([]string, error)
 	StartEncryptionSetupPhaseFor(modelName string)
+	RequestClientTraining(modelName string)
 }
 
 type ClientManagementServiceImpl struct {
@@ -61,6 +62,20 @@ func (c *ClientManagementServiceImpl) UpdateClients() {
 			if err != nil {
 				log.Fatal(err)
 			}
+		}
+	}
+}
+
+func (c *ClientManagementServiceImpl) RequestClientTraining(modelName string) {
+	if _, ok := c.modelManager[modelName]; !ok {
+		log.Println("No such model and client combination is available")
+		return
+	}
+	urls := c.modelManager[modelName].GetClientUrls()
+	for _, url := range urls {
+		err := c.httpClient.RequestClientTraining(url)
+		if err != nil {
+			log.Fatal(err)
 		}
 	}
 }

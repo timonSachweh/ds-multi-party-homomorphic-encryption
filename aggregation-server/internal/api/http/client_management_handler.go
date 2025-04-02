@@ -32,6 +32,9 @@ func (c *clientManagementRouteHandlerImpl) Routes() *chi.Mux {
 	c.router.Post("/upload", c.handlePostClientData)
 	c.router.Post("/", c.handleRegisterClient)
 	c.router.Put("/", c.handleRegisterClient)
+	c.router.Post("/train", c.handleTrainClients)
+	c.router.Put("/train", c.handleTrainClients)
+	c.router.Get("/train", c.handleTrainClients)
 	return c.router
 }
 
@@ -63,4 +66,8 @@ func (c *clientManagementRouteHandlerImpl) handleRegisterClient(w http.ResponseW
 
 	render.JSON(w, r, c.encryptionService.GetInformation())
 	w.WriteHeader(http.StatusOK)
+}
+
+func (c *clientManagementRouteHandlerImpl) handleTrainClients(w http.ResponseWriter, r *http.Request) {
+	c.clientManagementService.RequestClientTraining("default_model")
 }

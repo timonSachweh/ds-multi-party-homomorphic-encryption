@@ -66,8 +66,6 @@ func (h *encryptionHandlerImpl) handleReceivePublicKey(w http.ResponseWriter, r 
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
-	err := h.heService.SetPublicKey(publicKey)
-	if err != nil {
-		log.Print(err)
-	}
+	h.heService.SetPublicKey(publicKey)
+	log.Println("public key set")
 }

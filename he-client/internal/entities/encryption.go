@@ -1,6 +1,7 @@
 package entities
 
 import (
+	"github.com/tuneinsight/lattigo/v6/core/rlwe"
 	"github.com/tuneinsight/lattigo/v6/multiparty"
 	"github.com/tuneinsight/lattigo/v6/schemes/ckks"
 )
@@ -15,7 +16,7 @@ type CkgShareExchange struct {
 }
 
 type PublicKeyExchange struct {
-	PublicKey multiparty.PublicKeyGenShare `json:"public_key"`
+	PublicKey rlwe.PublicKey `json:"public_key"`
 }
 
 type RelinearizationKeyShare struct {

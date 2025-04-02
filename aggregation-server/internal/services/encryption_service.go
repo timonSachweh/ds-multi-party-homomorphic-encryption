@@ -77,7 +77,7 @@ func (e *encryptionServiceImpl) CalculatePublicKey(clients []string) *rlwe.Publi
 
 func (e *encryptionServiceImpl) PublishPublicKey(urls []string) {
 	publicKey := entities.PublicKeyExchange{
-		PublicKey: e.publicKeyShareCombined,
+		PublicKey: *e.publicKey,
 	}
 	for _, url := range urls {
 		err := e.httpClient.SendPublicKeyToClient(url, &publicKey)

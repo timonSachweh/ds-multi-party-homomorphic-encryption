@@ -14,15 +14,11 @@ import (
 
 type HEService interface {
 	Encrypt(data []float32) ([]*rlwe.Ciphertext, error)
-	Encrypt32(data []float32) (*rlwe.Ciphertext, error)
-	Encrypt64(data []float64) (*rlwe.Ciphertext, error)
 	Decrypt(ciphertext []*rlwe.Ciphertext, vectorLength int) ([]float32, error)
-	Decrypt32(ciphertext *rlwe.Ciphertext, vectorLength int) ([]float32, error)
-	Decrypt64(ciphertext *rlwe.Ciphertext, vectorLength int) ([]float64, error)
 	SetParameters(configuration entities.PrivacyParams)
 	PartialShareAggregation(share entities.CkgShareExchange) entities.CkgShareExchange
 	PartialRelinKeyAggregation(share entities.RelinearizationKeyShare) entities.RelinearizationKeyShare
-	SetPublicKey(key entities.PublicKeyExchange) error
+	SetPublicKey(key entities.PublicKeyExchange)
 }
 
 type HEServiceImpl struct {
@@ -42,6 +38,7 @@ type HEServiceImpl struct {
 	crs                           sampling.PRNG
 	keyCrp                        multiparty.PublicKeyGenCRP
 	relinCrp                      multiparty.RelinearizationKeyGenCRP
+	publicKey                     rlwe.EncryptionKey
 }
 
 func NewHEService() HEService {
@@ -55,10 +52,12 @@ func (h *HEServiceImpl) Encrypt(data []float32) ([]*rlwe.Ciphertext, error) {
 	}
 	splits := int(math.Ceil(float64(len(data)) / float64(h.params.MaxSlots())))
 	ciphertexts := make([]*rlwe.Ciphertext, splits)
-	for i := range int(splits) {
+	h.encryptor = rlwe.NewEncryptor(h.params, h.publicKey)
+
+	for i := range splits {
 		start := i * h.params.MaxSlots()
 		end := min((i+1)*h.params.MaxSlots(), len(data))
-		ciphertext, err := h.Encrypt64(converted[start:end])
+		ciphertext, err := h.encrypt64(converted[start:end])
 		if err != nil {
 			return nil, err
 		}
@@ -67,15 +66,7 @@ func (h *HEServiceImpl) Encrypt(data []float32) ([]*rlwe.Ciphertext, error) {
 	return ciphertexts, nil
 }
 
-func (h *HEServiceImpl) Encrypt32(data []float32) (*rlwe.Ciphertext, error) {
-	converted := make([]float64, len(data))
-	for i, v := range data {
-		converted[i] = float64(v)
-	}
-	return h.Encrypt64(converted)
-}
-
-func (h *HEServiceImpl) Encrypt64(data []float64) (*rlwe.Ciphertext, error) {
+func (h *HEServiceImpl) encrypt64(data []float64) (*rlwe.Ciphertext, error) {
 	pt := ckks.NewPlaintext(h.params, h.params.MaxLevel())
 
 	if err := h.encoder.Encode(data, pt); err != nil {
@@ -93,7 +84,7 @@ func (h *HEServiceImpl) Decrypt(ciphertext []*rlwe.Ciphertext, vectorLength int)
 		if i == len(ciphertext)-1 {
 			decryptionVectorLen = vectorLength % h.params.MaxSlots()
 		}
-		dec, err := h.Decrypt64(c, decryptionVectorLen)
+		dec, err := h.decrypt64(c, decryptionVectorLen)
 		if err != nil {
 			fmt.Println("Error decrypting ciphertext: ", err)
 			return nil, err
@@ -108,20 +99,7 @@ func (h *HEServiceImpl) Decrypt(ciphertext []*rlwe.Ciphertext, vectorLength int)
 	return result, nil
 }
 
-func (h *HEServiceImpl) Decrypt32(ciphertext *rlwe.Ciphertext, vectorLength int) ([]float32, error) {
-	decoded, err := h.Decrypt64(ciphertext, vectorLength)
-	if err != nil {
-		return nil, err
-	}
-
-	result := make([]float32, vectorLength)
-	for i, v := range decoded {
-		result[i] = float32(v)
-	}
-	return result, nil
-}
-
-func (h *HEServiceImpl) Decrypt64(ciphertext *rlwe.Ciphertext, vectorLength int) ([]float64, error) {
+func (h *HEServiceImpl) decrypt64(ciphertext *rlwe.Ciphertext, vectorLength int) ([]float64, error) {
 	plaintext := h.decryptor.DecryptNew(ciphertext)
 	decoded := make([]float64, vectorLength)
 	if err := h.encoder.Decode(plaintext, decoded); err != nil {
@@ -151,9 +129,8 @@ func (h *HEServiceImpl) SetParameters(configuration entities.PrivacyParams) {
 	h.relinearizationKeyGenProtocol.GenShareRoundOne(h.secretKey, h.relinCrp, h.rlkEphemSk, &h.rkgShareOne)
 }
 
-func (h *HEServiceImpl) SetPublicKey(key entities.PublicKeyExchange) error {
-	//TODO: persist public key
-	return nil
+func (h *HEServiceImpl) SetPublicKey(key entities.PublicKeyExchange) {
+	h.publicKey = &key.PublicKey
 }
 
 func (h *HEServiceImpl) PartialShareAggregation(share entities.CkgShareExchange) entities.CkgShareExchange {

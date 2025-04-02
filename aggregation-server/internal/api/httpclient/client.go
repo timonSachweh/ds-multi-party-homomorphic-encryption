@@ -15,6 +15,7 @@ type DataSpaceClientService interface {
 	SendPartialPublicCkgShare(url string, body *entities.CkgShareExchange) error
 	SendPublicKeyToClient(url string, pk *entities.PublicKeyExchange) error
 	SendPartialRelinearizationKey(url string, e *entities.RelinearizationKeyShare) error
+	RequestClientTraining(url string) error
 }
 
 type DataSpaceClientServiceImpl struct {
@@ -22,6 +23,14 @@ type DataSpaceClientServiceImpl struct {
 
 func NewDataSpaceClientService() DataSpaceClientService {
 	return &DataSpaceClientServiceImpl{}
+}
+
+func (d *DataSpaceClientServiceImpl) RequestClientTraining(url string) error {
+	if url == "" {
+		return errors.New("url is empty")
+	}
+	_, err := http.Get(fmt.Sprintf("%s/v1/model/train", url))
+	return err
 }
 
 func (d *DataSpaceClientServiceImpl) SendAggregatedResultsBack(url string, body entities.ClientModel) error {
