@@ -69,5 +69,5 @@ func (c *clientManagementRouteHandlerImpl) handleRegisterClient(w http.ResponseW
 }
 
 func (c *clientManagementRouteHandlerImpl) handleTrainClients(w http.ResponseWriter, r *http.Request) {
-	c.clientManagementService.RequestClientTraining("default_model")
+	c.clientManagementService.RequestClientTraining("mnist")
 }

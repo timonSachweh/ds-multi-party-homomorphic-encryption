@@ -2,9 +2,9 @@ package services
 
 import (
 	"errors"
+	"github.com/tuneinsight/lattigo/v6/core/rlwe"
 	"maps"
 	"slices"
-	"time"
 
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/entities"
 )
@@ -12,7 +12,8 @@ import (
 type ModelWeightStateManager interface {
 	AddModelWeightsFromClient(entities.ClientModel)
 	AddClient(client entities.ClientModel) error
-	GetAggregatedModelWeights() (entities.ClientModel, []string, error)
+	ModelCanAggregate() bool
+	GetClients() ([]entities.ClientModel, [][]*rlwe.Ciphertext, []string, int)
 	GetIdentifiers() []string
 	GetClientUrls() []string
 }
@@ -34,6 +35,7 @@ func NewModelWeightStateManager(minRequiredClients int) ModelWeightStateManager 
 func (m *ModelWeightStateImpl) AddModelWeightsFromClient(modelWeights entities.ClientModel) {
 	model := m.clients[modelWeights.GetIdentifier()]
 	model.SetNewWeights(modelWeights.Weights, modelWeights.Length)
+	m.clients[modelWeights.GetIdentifier()] = model
 }
 
 func (m *ModelWeightStateImpl) AddClient(client entities.ClientModel) error {
@@ -70,22 +72,32 @@ func (m *ModelWeightStateImpl) GetIdentifiers() []string {
 	return slices.Collect(maps.Keys(m.clients))
 }
 
-func (m *ModelWeightStateImpl) GetAggregatedModelWeights() (entities.ClientModel, []string, error) {
-	if len(m.clients) < m.minRequiredClients {
-		return entities.ClientModel{}, nil, errors.New("not enough clients to aggregate")
-	}
-
-	aggregatedResult := entities.ClientModel{}
+func (m *ModelWeightStateImpl) GetClients() ([]entities.ClientModel, [][]*rlwe.Ciphertext, []string, int) {
+	clients := make([]entities.ClientModel, 0)
+	modelWeights := make([][]*rlwe.Ciphertext, 0)
 	clientUrls := make([]string, 0)
-	for _, modelWeights := range m.clients {
-		aggregatedResult = modelWeights
-
-		modelWeights.LastModelUpdate = time.Now()
-		m.updatedModelWeights = append(m.updatedModelWeights, modelWeights)
-
-		clientUrls = append(clientUrls, modelWeights.ClientUrl)
+	weightLength := 0
+	for _, client := range m.clients {
+		clients = append(clients, client)
+		modelWeights = append(modelWeights, client.WeightsAsCiphertext())
+		clientUrls = append(clientUrls, client.ClientUrl)
+		if weightLength == 0 {
+			weightLength = client.Length
+		}
 	}
-	m.clients = make(map[string]entities.ClientModel)
+	return clients, modelWeights, clientUrls, weightLength
+}
 
-	return aggregatedResult, clientUrls, nil
+func (m *ModelWeightStateImpl) ModelCanAggregate() bool {
+	if len(m.clients) < m.minRequiredClients {
+		return false
+	}
+
+	for _, modelWeights := range m.clients {
+		if modelWeights.LastModelUpdate.IsZero() {
+			return false
+		}
+	}
+
+	return true
 }

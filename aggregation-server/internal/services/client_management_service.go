@@ -33,7 +33,7 @@ func NewClientManagementService(httpClient httpclient.DataSpaceClientService, en
 		encryptionService:  encryptionService,
 	}
 	c := cron.New()
-	c.AddFunc("@every 00h00m10s", func() { aggregationService.UpdateClients() })
+	c.AddFunc("@every 00h00m30s", func() { aggregationService.UpdateClients() })
 	c.Start()
 
 	return aggregationService
@@ -51,14 +51,20 @@ func (c *ClientManagementServiceImpl) AddNewData(data entities.ClientModel) erro
 }
 
 func (c *ClientManagementServiceImpl) UpdateClients() {
-	for _, modelManager := range c.modelManager {
-		modelWeights, clients, err := modelManager.GetAggregatedModelWeights()
-		if err != nil {
-			// will be the error for "not enough clients to aggregate"
+	for key, modelManager := range c.modelManager {
+		if !modelManager.ModelCanAggregate() {
 			continue
 		}
-		for i := range clients {
-			err = c.httpClient.SendAggregatedResultsBack(clients[i], modelWeights)
+		log.Println("Updating clients for model: " + key)
+		_, modelWeights, clientUrls, weightLength := modelManager.GetClients()
+		updatedModelWeights := entities.ClientModel{
+			ModelName: key,
+			Length:    weightLength,
+		}
+		updatedModelWeights.SetCiphertextWeights(c.encryptionService.Aggregate(modelWeights))
+		for _, client := range clientUrls {
+			err := c.httpClient.SendAggregatedResultsBack(client, updatedModelWeights)
+			log.Println(err)
 			if err != nil {
 				log.Fatal(err)
 			}

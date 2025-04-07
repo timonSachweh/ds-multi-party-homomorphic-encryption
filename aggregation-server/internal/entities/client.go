@@ -33,3 +33,14 @@ func (m *ClientModel) SetNewWeights(weights [][]byte, length int) {
 	m.Length = length
 	m.LastModelUpdate = time.Now()
 }
+
+func (m *ClientModel) SetCiphertextWeights(weights []*rlwe.Ciphertext) {
+	m.Weights = make([][]byte, len(weights))
+	for i, w := range weights {
+		binary, err := w.MarshalBinary()
+		if err != nil {
+			return
+		}
+		m.Weights[i] = binary
+	}
+}

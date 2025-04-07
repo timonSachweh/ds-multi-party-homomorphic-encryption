@@ -15,7 +15,7 @@ class ServerConfig:
     
 class ModelConfig:
     def __init__(self):
-        self.name = os.getenv("ML_MODEL_NAME", "mnist")
+        self.name = os.getenv("ML_MODEL_NAME", "default_model")
         self.version = os.getenv("ML_MODEL_VERSION", "1.0")
         self.model_path = os.getenv("ML_MODEL_PATH", "./model.pt")
         self.batch_size = int(os.getenv("ML_BATCH_SIZE", 64))

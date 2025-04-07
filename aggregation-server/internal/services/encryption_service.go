@@ -16,6 +16,7 @@ type EncryptionService interface {
 	GetInformation() entities.PrivacyParams
 	PublishPublicKey(urls []string)
 	CalculateRelinearizationKeys(urls []string) *rlwe.MemEvaluationKeySet
+	Aggregate(weights [][]*rlwe.Ciphertext) []*rlwe.Ciphertext
 }
 
 type encryptionServiceImpl struct {
@@ -58,6 +59,33 @@ func NewEncryptionService(httpClient httpclient.DataSpaceClientService) Encrypti
 		publicKeyGenProtocol: multipartyPublicKeyGenProtocol,
 		publicKey:            rlwe.NewPublicKey(params),
 	}
+}
+
+func (e *encryptionServiceImpl) Aggregate(weights [][]*rlwe.Ciphertext) []*rlwe.Ciphertext {
+	if len(weights) == 0 {
+		return nil
+	}
+	if len(weights) == 1 {
+		return weights[0]
+	}
+	aggregated := weights[0]
+	evaluator := ckks.NewEvaluator(e.params, e.evk)
+
+	for i := range aggregated {
+		for j := 1; j < len(weights); j++ {
+			if err := evaluator.Mul(aggregated[i], weights[j][i], aggregated[i]); err != nil {
+				log.Fatal(err)
+			}
+			if err := evaluator.Relinearize(aggregated[i], aggregated[i]); err != nil {
+				log.Fatal(err)
+			}
+		}
+		err := evaluator.Mul(aggregated[i], 1.0/float64(len(weights)), aggregated[i])
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+	return aggregated
 }
 
 func (e *encryptionServiceImpl) GetInformation() entities.PrivacyParams {
@@ -122,7 +150,7 @@ func (e *encryptionServiceImpl) CalculateRelinearizationKeys(clients []string) *
 	rkg.GenRelinearizationKey(share.ShareOne, share.ShareTwo, rlk)
 
 	e.evk = rlwe.NewMemEvaluationKeySet(rlk)
-	log.Println("Relination Key Set created")
+	log.Println("Relinearization Key Set created")
 
 	return e.evk
 }

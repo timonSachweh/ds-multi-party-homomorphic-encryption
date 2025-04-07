@@ -19,14 +19,14 @@ type Configuration struct {
 type HTTPServer struct {
 	IdleTimeout  time.Duration `env:"HTTP_IDLE_TIMEOUT,default=60s"`
 	Port         int           `env:"HTTP_PORT,default=8080"`
-	ReadTimeout  time.Duration `env:"HTTP_READ_TIMEOUT,default=1s"`
-	WriteTimeout time.Duration `env:"HTTP_WRITE_TIMEOUT,default=2s"`
+	ReadTimeout  time.Duration `env:"HTTP_READ_TIMEOUT,default=10s"`
+	WriteTimeout time.Duration `env:"HTTP_WRITE_TIMEOUT,default=20s"`
 }
 
 type PrivacyMLConfiguration struct {
 	AggregationServiceUrl string `env:"AGGREGATION_SERVICE_URL,default=http://aggregation-server:8080"`
 	ExternalUrl           string `env:"EXTERNAL_URL,default=http://localhost:8081"`
-	ModelName             string `env:"MODEL_NAME,default=default_model"`
+	ModelName             string `env:"ML_MODEL_NAME,default=default_model"`
 }
 
 type PythonConfiguration struct {

@@ -45,6 +45,7 @@ func (h *aggregationUpdateHandlerImpl) handleUpdateModel(w http.ResponseWriter, 
 	var requestData entities.ClientModel
 	if err := json.NewDecoder(r.Body).Decode(&requestData); err != nil {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		log.Println(err)
 		return
 	}
 	log.Println("Handler: model update request")
