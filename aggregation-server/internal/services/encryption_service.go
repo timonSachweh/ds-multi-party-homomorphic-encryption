@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/api/httpclient"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/entities"
 	"github.com/tuneinsight/lattigo/v6/core/rlwe"
@@ -17,6 +18,9 @@ type EncryptionService interface {
 	PublishPublicKey(urls []string)
 	CalculateRelinearizationKeys(urls []string) *rlwe.MemEvaluationKeySet
 	Aggregate(weights [][]*rlwe.Ciphertext) []*rlwe.Ciphertext
+	CalculatePublicKeySwitchShare(urls []string)
+	PublicKeySwitch(weights []*rlwe.Ciphertext) []*rlwe.Ciphertext
+	Decrypt(weights []*rlwe.Ciphertext, vectorLen int) []float64
 }
 
 type encryptionServiceImpl struct {
@@ -26,9 +30,14 @@ type encryptionServiceImpl struct {
 	encoder              *ckks.Encoder
 	publicKeyGenProtocol multiparty.PublicKeyGenProtocol
 
-	publicKeyShareCombined multiparty.PublicKeyGenShare
-	publicKey              *rlwe.PublicKey
-	evk                    *rlwe.MemEvaluationKeySet
+	targetPublicKey *rlwe.PublicKey
+	targetSecretKey *rlwe.SecretKey
+
+	publicKeyShareCombined  multiparty.PublicKeyGenShare
+	publicKey               *rlwe.PublicKey
+	evk                     *rlwe.MemEvaluationKeySet
+	publicKeySwitchProtocol multiparty.PublicKeySwitchProtocol
+	publicKeySwitchCombined multiparty.PublicKeySwitchShare
 }
 
 func NewEncryptionService(httpClient httpclient.DataSpaceClientService) EncryptionService {
@@ -50,14 +59,20 @@ func NewEncryptionService(httpClient httpclient.DataSpaceClientService) Encrypti
 	}
 
 	multipartyPublicKeyGenProtocol := multiparty.NewPublicKeyGenProtocol(params)
+	publicKeySwitchProtocol, _ := multiparty.NewPublicKeySwitchProtocol(params, ring.DiscreteGaussian{Sigma: 1 << 30, Bound: 6 * (1 << 30)})
+
+	targetSecretKey, targetPublicKey := rlwe.NewKeyGenerator(params).GenKeyPairNew()
 
 	return &encryptionServiceImpl{
-		httpClient:           httpClient,
-		params:               params,
-		crs:                  crs,
-		encoder:              ckks.NewEncoder(params),
-		publicKeyGenProtocol: multipartyPublicKeyGenProtocol,
-		publicKey:            rlwe.NewPublicKey(params),
+		httpClient:              httpClient,
+		params:                  params,
+		crs:                     crs,
+		encoder:                 ckks.NewEncoder(params),
+		publicKeyGenProtocol:    multipartyPublicKeyGenProtocol,
+		targetPublicKey:         targetPublicKey,
+		targetSecretKey:         targetSecretKey,
+		publicKey:               rlwe.NewPublicKey(params),
+		publicKeySwitchProtocol: publicKeySwitchProtocol,
 	}
 }
 
@@ -85,13 +100,60 @@ func (e *encryptionServiceImpl) Aggregate(weights [][]*rlwe.Ciphertext) []*rlwe.
 			log.Fatal(err)
 		}
 	}
+
 	return aggregated
+}
+
+func (e *encryptionServiceImpl) CalculatePublicKeySwitchShare(clients []string) {
+	e.publicKeySwitchCombined = e.publicKeySwitchProtocol.AllocateShare(e.params.MaxLevel())
+	var err error
+	for _, client := range clients {
+		err = e.httpClient.SendPartialPublicKeySwitchAggregation(client, &e.publicKeySwitchCombined)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+	log.Println("Public Key Switch Share exchange complete")
+}
+
+func (e *encryptionServiceImpl) PublicKeySwitch(weights []*rlwe.Ciphertext) []*rlwe.Ciphertext {
+	for i := range weights {
+		e.publicKeySwitchProtocol.KeySwitch(weights[i], e.publicKeySwitchCombined, weights[i])
+	}
+	return weights
+}
+
+func (e *encryptionServiceImpl) Decrypt(weights []*rlwe.Ciphertext, vectorLen int) []float64 {
+	decryptor := rlwe.NewDecryptor(e.params, e.targetSecretKey)
+	decryptedWeights := make([]float64, 0)
+	for i := range weights {
+		decVecLen := e.params.MaxSlots()
+		if i == len(weights)-1 {
+			decVecLen = vectorLen % e.params.MaxSlots()
+		}
+		dec, err := e.decrypt64(decryptor, weights[i], decVecLen)
+		if err != nil {
+			fmt.Println("Error decrypting ciphertext: ", err)
+			return nil
+		}
+		decryptedWeights = append(decryptedWeights, dec...)
+	}
+	return decryptedWeights
+}
+
+func (h *encryptionServiceImpl) decrypt64(decryptor *rlwe.Decryptor, ciphertext *rlwe.Ciphertext, vectorLength int) ([]float64, error) {
+	plaintext := decryptor.DecryptNew(ciphertext)
+	decoded := make([]float64, vectorLength)
+	if err := h.encoder.Decode(plaintext, decoded); err != nil {
+		return nil, err
+	}
+	return decoded, nil
 }
 
 func (e *encryptionServiceImpl) GetInformation() entities.PrivacyParams {
 	return entities.PrivacyParams{
 		CKKSParameters: e.params,
-		//Crs:            e.crs,
+		Tpk:            *e.targetPublicKey,
 	}
 }
 

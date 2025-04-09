@@ -6,6 +6,8 @@ import (
 	"github.com/go-chi/render"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/entities"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/services"
+	"github.com/tuneinsight/lattigo/v6/multiparty"
+	"io"
 	"log"
 	"net/http"
 )
@@ -31,6 +33,10 @@ func (h *encryptionHandlerImpl) Routes() *chi.Mux {
 	h.router.Put("/gen/shared-public-key", h.handleSharedPublicKey)
 	h.router.Post("/gen/relinearization-key", h.handleSharedRelinKey)
 	h.router.Put("/gen/relinearization-key", h.handleSharedRelinKey)
+	h.router.Post("/gen/public-key-switch", h.handlePublicKeySwitch)
+	h.router.Put("/gen/public-key-switch", h.handlePublicKeySwitch)
+	h.router.Post("/gen/public-key-switch-aggregate", h.handlePublicKeySwitchAggregate)
+	h.router.Put("/gen/public-key-switch-aggregate", h.handlePublicKeySwitchAggregate)
 	h.router.Post("/public-key", h.handleReceivePublicKey)
 	h.router.Put("/public-key", h.handleReceivePublicKey)
 	return h.router
@@ -68,4 +74,36 @@ func (h *encryptionHandlerImpl) handleReceivePublicKey(w http.ResponseWriter, r 
 	}
 	h.heService.SetPublicKey(publicKey)
 	log.Println("public key set")
+}
+
+func (h *encryptionHandlerImpl) handlePublicKeySwitch(w http.ResponseWriter, r *http.Request) {
+	var share entities.ClientModel
+	if err := json.NewDecoder(r.Body).Decode(&share); err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+	h.heService.PartialPublicKeySwitchGeneration(share)
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *encryptionHandlerImpl) handlePublicKeySwitchAggregate(w http.ResponseWriter, r *http.Request) {
+	var share multiparty.PublicKeySwitchShare
+	bytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		return
+	}
+	err = share.UnmarshalBinary(bytes)
+	if err != nil {
+		return
+	}
+	h.heService.PartialPublicKeySwitchAggregation(share)
+	binaryValues, err := share.MarshalBinary()
+	if err != nil {
+		return
+	}
+	_, err = w.Write(binaryValues)
+	if err != nil {
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }

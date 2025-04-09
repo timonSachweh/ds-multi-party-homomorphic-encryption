@@ -1,6 +1,7 @@
 package entities
 
 import (
+	"math"
 	"time"
 
 	"github.com/tuneinsight/lattigo/v6/core/rlwe"
@@ -42,5 +43,25 @@ func (m *ClientModel) SetCiphertextWeights(weights []*rlwe.Ciphertext) {
 			return
 		}
 		m.Weights[i] = binary
+	}
+}
+
+type ModelClientUpdate struct {
+	ModelName string    `json:"model_name"`
+	Length    int       `json:"length"`
+	Weights   []float32 `json:"weights"`
+}
+
+func (m *ModelClientUpdate) AddWeights(weights []float64) {
+	m.Length = len(weights)
+	m.Weights = make([]float32, len(weights))
+	for i, w := range weights {
+		m.Weights[i] = float32(w)
+		if m.Weights[i] == float32(math.Inf(+1)) {
+			m.Weights[i] = math.MaxFloat32
+		}
+		if m.Weights[i] == float32(math.Inf(-1)) {
+			m.Weights[i] = -math.MaxFloat32
+		}
 	}
 }

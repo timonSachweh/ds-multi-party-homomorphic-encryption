@@ -12,7 +12,7 @@ type MLService interface {
 	Train()
 	Predict()
 	RetrainAndSendUpdatedModelWeights()
-	UpdateModelWeights(entities.ClientModel)
+	UpdateModelWeights(update entities.ModelClientUpdate)
 }
 
 type MLServiceImpl struct {
@@ -70,20 +70,21 @@ func (m *MLServiceImpl) Predict() {
 }
 
 func (m *MLServiceImpl) Train() {
-	m.pythonClient.StartTraining()
-}
-
-func (m *MLServiceImpl) UpdateModelWeights(weights entities.ClientModel) {
-	decrypt, err := m.heService.Decrypt(weights.WeightsAsCiphertext(), weights.Length)
+	err := m.pythonClient.StartTraining()
 	if err != nil {
 		return
 	}
+}
 
+func (m *MLServiceImpl) UpdateModelWeights(update entities.ModelClientUpdate) {
 	updatedModel := entities.MLModelWeights{
-		ModelName: weights.ModelName,
-		Weights:   decrypt,
-		Length:    weights.Length,
+		ModelName: update.ModelName,
+		Weights:   update.Weights,
+		Length:    update.Length,
 	}
 
-	m.pythonClient.UpdateModelWeights(updatedModel)
+	err := m.pythonClient.UpdateModelWeights(updatedModel)
+	if err != nil {
+		return
+	}
 }

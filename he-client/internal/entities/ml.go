@@ -33,6 +33,12 @@ func (m *ClientModel) WeightsAsCiphertext() []*rlwe.Ciphertext {
 	return ciphertexts
 }
 
+type ModelClientUpdate struct {
+	ModelName string    `json:"model_name"`
+	Length    int       `json:"length"`
+	Weights   []float32 `json:"weights"`
+}
+
 type PredictionRequest struct {
 	Data [][]float32 `json:"data"`
 }

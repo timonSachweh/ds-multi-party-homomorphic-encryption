@@ -5,6 +5,7 @@ import (
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/api/httpclient"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/config"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/entities"
+	"github.com/tuneinsight/lattigo/v6/core/rlwe"
 	"golang.org/x/crypto/openpgp/errors"
 	"log"
 )
@@ -57,19 +58,37 @@ func (c *ClientManagementServiceImpl) UpdateClients() {
 		}
 		log.Println("Updating clients for model: " + key)
 		_, modelWeights, clientUrls, weightLength := modelManager.GetClients()
-		updatedModelWeights := entities.ClientModel{
-			ModelName: key,
-			Length:    weightLength,
-		}
-		updatedModelWeights.SetCiphertextWeights(c.encryptionService.Aggregate(modelWeights))
-		for _, client := range clientUrls {
-			err := c.httpClient.SendAggregatedResultsBack(client, updatedModelWeights)
-			log.Println(err)
-			if err != nil {
-				log.Fatal(err)
-			}
+		aggregatedModel := c.aggregateWeights(key, modelWeights, weightLength)
+		c.initiateKeySwitchGeneration(clientUrls, aggregatedModel)
+		c.encryptionService.CalculatePublicKeySwitchShare(modelManager.GetClientUrls())
+
+		ciphertextWeights := aggregatedModel.WeightsAsCiphertext()
+		ciphertextWeights = c.encryptionService.PublicKeySwitch(ciphertextWeights)
+
+		weights := c.encryptionService.Decrypt(ciphertextWeights, weightLength)
+		log.Printf("Weights decrypted with length: %d\n", len(weights))
+		c.updateClientModels(modelManager.GetClientUrls(), weights, key)
+		modelManager.ResetClientWeights()
+	}
+}
+
+func (c *ClientManagementServiceImpl) aggregateWeights(key string, weights [][]*rlwe.Ciphertext, weightLength int) entities.ClientModel {
+	updatedModelWeights := entities.ClientModel{
+		ModelName: key,
+		Length:    weightLength,
+	}
+	updatedModelWeights.SetCiphertextWeights(c.encryptionService.Aggregate(weights))
+	return updatedModelWeights
+}
+
+func (c *ClientManagementServiceImpl) initiateKeySwitchGeneration(clientUrls []string, clientModel entities.ClientModel) {
+	for _, client := range clientUrls {
+		err := c.httpClient.SendPartialPublicKeySwitchGenerate(client, &clientModel)
+		if err != nil {
+			log.Fatal(err)
 		}
 	}
+	log.Println("Key switch generation initiated for clients")
 }
 
 func (c *ClientManagementServiceImpl) RequestClientTraining(modelName string) {
@@ -116,5 +135,18 @@ func (c *ClientManagementServiceImpl) StartEncryptionSetupPhaseFor(modelName str
 	c.encryptionService.CalculatePublicKey(clientUrls)
 	c.encryptionService.PublishPublicKey(clientUrls)
 	c.encryptionService.CalculateRelinearizationKeys(clientUrls)
+}
 
+func (c *ClientManagementServiceImpl) updateClientModels(urls []string, weights []float64, key string) {
+	modelUpdateResponse := entities.ModelClientUpdate{
+		ModelName: key,
+	}
+	modelUpdateResponse.AddWeights(weights)
+	for i := range urls {
+		err := c.httpClient.SendAggregatedResultsBack(urls[i], &modelUpdateResponse)
+		if err != nil {
+			log.Println(err)
+		}
+	}
+	log.Println("Updated client models for model: " + key)
 }

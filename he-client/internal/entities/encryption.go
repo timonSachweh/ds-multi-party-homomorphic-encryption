@@ -8,7 +8,7 @@ import (
 
 type PrivacyParams struct {
 	CKKSParameters ckks.Parameters `json:"ckks_parameters"`
-	//Crs            sampling.PRNG   `json:"crs"`
+	Tpk            rlwe.PublicKey  `json:"tpk"`
 }
 
 type CkgShareExchange struct {
@@ -22,4 +22,8 @@ type PublicKeyExchange struct {
 type RelinearizationKeyShare struct {
 	ShareOne multiparty.RelinearizationKeyGenShare `json:"share_one"`
 	ShareTwo multiparty.RelinearizationKeyGenShare `json:"share_two"`
+}
+
+type PublicKeySwitchShare struct {
+	Share multiparty.PublicKeySwitchShare `json:"share"`
 }

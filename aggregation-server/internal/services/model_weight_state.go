@@ -5,6 +5,7 @@ import (
 	"github.com/tuneinsight/lattigo/v6/core/rlwe"
 	"maps"
 	"slices"
+	"time"
 
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/entities"
 )
@@ -16,6 +17,7 @@ type ModelWeightStateManager interface {
 	GetClients() ([]entities.ClientModel, [][]*rlwe.Ciphertext, []string, int)
 	GetIdentifiers() []string
 	GetClientUrls() []string
+	ResetClientWeights()
 }
 
 type ModelWeightStateImpl struct {
@@ -47,6 +49,14 @@ func (m *ModelWeightStateImpl) AddClient(client entities.ClientModel) error {
 	}
 	m.clients[client.GetIdentifier()] = client
 	return nil
+}
+
+func (m *ModelWeightStateImpl) ResetClientWeights() {
+	for key, client := range m.clients {
+		client.Weights = nil
+		client.LastModelUpdate = time.Time{}
+		m.clients[key] = client
+	}
 }
 
 func (m *ModelWeightStateImpl) GetClientUrls() []string {

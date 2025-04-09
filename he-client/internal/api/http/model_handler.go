@@ -42,7 +42,7 @@ func (h *aggregationUpdateHandlerImpl) Routes() *chi.Mux {
 }
 
 func (h *aggregationUpdateHandlerImpl) handleUpdateModel(w http.ResponseWriter, r *http.Request) {
-	var requestData entities.ClientModel
+	var requestData entities.ModelClientUpdate
 	if err := json.NewDecoder(r.Body).Decode(&requestData); err != nil {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		log.Println(err)

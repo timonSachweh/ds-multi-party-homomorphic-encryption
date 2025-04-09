@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/entities"
 	"github.com/tuneinsight/lattigo/v6/multiparty"
+	"github.com/tuneinsight/lattigo/v6/ring"
 	"github.com/tuneinsight/lattigo/v6/utils/sampling"
 	"log"
 	"math"
@@ -18,6 +19,8 @@ type HEService interface {
 	SetParameters(configuration entities.PrivacyParams)
 	PartialShareAggregation(share entities.CkgShareExchange) entities.CkgShareExchange
 	PartialRelinKeyAggregation(share entities.RelinearizationKeyShare) entities.RelinearizationKeyShare
+	PartialPublicKeySwitchGeneration(weights entities.ClientModel)
+	PartialPublicKeySwitchAggregation(share multiparty.PublicKeySwitchShare) multiparty.PublicKeySwitchShare
 	SetPublicKey(key entities.PublicKeyExchange)
 }
 
@@ -39,6 +42,9 @@ type HEServiceImpl struct {
 	keyCrp                        multiparty.PublicKeyGenCRP
 	relinCrp                      multiparty.RelinearizationKeyGenCRP
 	publicKey                     rlwe.EncryptionKey
+	publicKeySwitchProtocol       multiparty.PublicKeySwitchProtocol
+	pcksShare                     multiparty.PublicKeySwitchShare
+	tpk                           *rlwe.PublicKey
 }
 
 func NewHEService() HEService {
@@ -110,6 +116,7 @@ func (h *HEServiceImpl) decrypt64(ciphertext *rlwe.Ciphertext, vectorLength int)
 
 func (h *HEServiceImpl) SetParameters(configuration entities.PrivacyParams) {
 	h.params = configuration.CKKSParameters
+	h.tpk = &configuration.Tpk
 	crs, err := sampling.NewKeyedPRNG([]byte{'l', 'a', 't', 't', 'i', 'g', 'o'})
 	if err != nil {
 		panic(err)
@@ -127,6 +134,9 @@ func (h *HEServiceImpl) SetParameters(configuration entities.PrivacyParams) {
 	h.relinCrp = h.relinearizationKeyGenProtocol.SampleCRP(h.crs)
 	h.rlkEphemSk, h.rkgShareOne, h.rkgShareTwo = h.relinearizationKeyGenProtocol.AllocateShare()
 	h.relinearizationKeyGenProtocol.GenShareRoundOne(h.secretKey, h.relinCrp, h.rlkEphemSk, &h.rkgShareOne)
+
+	h.publicKeySwitchProtocol, _ = multiparty.NewPublicKeySwitchProtocol(h.params, ring.DiscreteGaussian{Sigma: 1 << 30, Bound: 6 * (1 << 30)})
+	h.pcksShare = h.publicKeySwitchProtocol.AllocateShare(h.params.MaxLevel())
 }
 
 func (h *HEServiceImpl) SetPublicKey(key entities.PublicKeyExchange) {
@@ -143,5 +153,18 @@ func (h *HEServiceImpl) PartialRelinKeyAggregation(share entities.Relinearizatio
 	h.relinearizationKeyGenProtocol.AggregateShares(h.rkgShareOne, share.ShareOne, &share.ShareOne)
 	h.relinearizationKeyGenProtocol.AggregateShares(h.rkgShareTwo, share.ShareTwo, &share.ShareTwo)
 	log.Println("partial relinearization key aggregation done")
+	return share
+}
+
+func (h *HEServiceImpl) PartialPublicKeySwitchGeneration(weights entities.ClientModel) {
+	h.publicKeySwitchProtocol.GenShare(h.secretKey, h.tpk, weights.WeightsAsCiphertext()[0], &h.pcksShare)
+}
+
+func (h *HEServiceImpl) PartialPublicKeySwitchAggregation(share multiparty.PublicKeySwitchShare) multiparty.PublicKeySwitchShare {
+	err := h.publicKeySwitchProtocol.AggregateShares(h.pcksShare, share, &share)
+	if err != nil {
+		return share
+	}
+	log.Println("partial public key switch aggregation done")
 	return share
 }
