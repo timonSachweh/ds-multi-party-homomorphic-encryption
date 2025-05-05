@@ -1,10 +1,9 @@
 package entities
 
 import (
+	"github.com/Pro7ech/lattigo/rlwe"
 	"math"
 	"time"
-
-	"github.com/tuneinsight/lattigo/v6/core/rlwe"
 )
 
 type ClientModel struct {

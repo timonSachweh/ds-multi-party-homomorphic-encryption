@@ -1,4 +1,5 @@
 import json
+import random
 
 import config
 from flask import Flask
@@ -11,7 +12,9 @@ app = Flask(__name__)
 app.logger.setLevel(logging.ERROR)
 c = config.Config()
 
-weights = np.full(20, 3.14513, dtype=np.float32)
+weights = np.full(20, 0.326, dtype=np.float32)
+for i in range(10, len(weights)):
+    weights[i] = random.random() * 2
 
 @app.route('/health')
 @disable_logging
@@ -32,7 +35,7 @@ def model_params_route():
         response = json.dumps({
             "model_name": c.model.name,
             "version": c.model.version,
-            "weights": weights
+            "weights": weights.tolist()
         })
         return response
     elif request.method == 'POST':

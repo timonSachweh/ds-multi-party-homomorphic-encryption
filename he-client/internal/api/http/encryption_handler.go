@@ -1,13 +1,12 @@
 package http
 
 import (
-	"encoding/json"
+	"encoding/gob"
+	"github.com/Pro7ech/lattigo/mhe"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/entities"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/services"
-	"github.com/tuneinsight/lattigo/v6/multiparty"
-	"io"
 	"log"
 	"net/http"
 )
@@ -44,7 +43,7 @@ func (h *encryptionHandlerImpl) Routes() *chi.Mux {
 
 func (h *encryptionHandlerImpl) handleSharedPublicKey(w http.ResponseWriter, r *http.Request) {
 	var ckgShare entities.CkgShareExchange
-	if err := json.NewDecoder(r.Body).Decode(&ckgShare); err != nil {
+	if err := gob.NewDecoder(r.Body).Decode(&ckgShare); err != nil {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
@@ -56,7 +55,7 @@ func (h *encryptionHandlerImpl) handleSharedPublicKey(w http.ResponseWriter, r *
 
 func (h *encryptionHandlerImpl) handleSharedRelinKey(w http.ResponseWriter, r *http.Request) {
 	var share entities.RelinearizationKeyShare
-	if err := json.NewDecoder(r.Body).Decode(&share); err != nil {
+	if err := gob.NewDecoder(r.Body).Decode(&share); err != nil {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
@@ -68,7 +67,7 @@ func (h *encryptionHandlerImpl) handleSharedRelinKey(w http.ResponseWriter, r *h
 
 func (h *encryptionHandlerImpl) handleReceivePublicKey(w http.ResponseWriter, r *http.Request) {
 	var publicKey entities.PublicKeyExchange
-	if err := json.NewDecoder(r.Body).Decode(&publicKey); err != nil {
+	if err := gob.NewDecoder(r.Body).Decode(&publicKey); err != nil {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
@@ -78,7 +77,7 @@ func (h *encryptionHandlerImpl) handleReceivePublicKey(w http.ResponseWriter, r 
 
 func (h *encryptionHandlerImpl) handlePublicKeySwitch(w http.ResponseWriter, r *http.Request) {
 	var share entities.ClientModel
-	if err := json.NewDecoder(r.Body).Decode(&share); err != nil {
+	if err := gob.NewDecoder(r.Body).Decode(&share); err != nil {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
@@ -87,13 +86,9 @@ func (h *encryptionHandlerImpl) handlePublicKeySwitch(w http.ResponseWriter, r *
 }
 
 func (h *encryptionHandlerImpl) handlePublicKeySwitchAggregate(w http.ResponseWriter, r *http.Request) {
-	var share multiparty.PublicKeySwitchShare
-	bytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		return
-	}
-	err = share.UnmarshalBinary(bytes)
-	if err != nil {
+	var share mhe.KeySwitchingShare
+	if err := gob.NewDecoder(r.Body).Decode(&share); err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
 	h.heService.PartialPublicKeySwitchAggregation(share)

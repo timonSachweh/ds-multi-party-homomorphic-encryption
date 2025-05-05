@@ -2,10 +2,11 @@ package httpclient
 
 import (
 	"bytes"
+	"encoding/gob"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/tuneinsight/lattigo/v6/multiparty"
+	"github.com/Pro7ech/lattigo/mhe"
 	"io"
 	"net/http"
 
@@ -18,7 +19,7 @@ type DataSpaceClientService interface {
 	SendPublicKeyToClient(url string, pk *entities.PublicKeyExchange) error
 	SendPartialRelinearizationKey(url string, e *entities.RelinearizationKeyShare) error
 	SendPartialPublicKeySwitchGenerate(url string, e *entities.ClientModel) error
-	SendPartialPublicKeySwitchAggregation(url string, e *multiparty.PublicKeySwitchShare) error
+	SendPartialPublicKeySwitchAggregation(url string, e *mhe.KeySwitchingShare) error
 	RequestClientTraining(url string) error
 }
 
@@ -50,14 +51,16 @@ func (d *DataSpaceClientServiceImpl) SendAggregatedResultsBack(url string, body 
 }
 
 func (d *DataSpaceClientServiceImpl) SendPartialPublicCkgShare(url string, body *entities.CkgShareExchange) error {
-	jsonData, err := json.Marshal(body)
+	var data bytes.Buffer
+	encoder := gob.NewEncoder(&data)
+	err := encoder.Encode(body)
 	if err != nil {
 		return err
 	}
 	if url == "" {
 		return errors.New("url is empty")
 	}
-	resp, err := http.Post(fmt.Sprintf("%s/v1/enc/gen/shared-public-key", url), "application/json", bytes.NewReader(jsonData))
+	resp, err := http.Post(fmt.Sprintf("%s/v1/enc/gen/shared-public-key", url), "application/json", &data)
 	if err != nil {
 		return err
 	}
@@ -67,14 +70,16 @@ func (d *DataSpaceClientServiceImpl) SendPartialPublicCkgShare(url string, body 
 }
 
 func (d *DataSpaceClientServiceImpl) SendPartialRelinearizationKey(url string, e *entities.RelinearizationKeyShare) error {
-	jsonData, err := json.Marshal(e)
+	var data bytes.Buffer
+	encoder := gob.NewEncoder(&data)
+	err := encoder.Encode(e)
 	if err != nil {
 		return err
 	}
 	if url == "" {
 		return errors.New("url is empty")
 	}
-	resp, err := http.Post(fmt.Sprintf("%s/v1/enc/gen/relinearization-key", url), "application/json", bytes.NewReader(jsonData))
+	resp, err := http.Post(fmt.Sprintf("%s/v1/enc/gen/relinearization-key", url), "application/json", &data)
 	if err != nil {
 		return err
 	}
@@ -87,18 +92,20 @@ func (d *DataSpaceClientServiceImpl) SendPartialRelinearizationKey(url string, e
 }
 
 func (d *DataSpaceClientServiceImpl) SendPartialPublicKeySwitchGenerate(url string, e *entities.ClientModel) error {
-	jsonData, err := json.Marshal(e)
+	var data bytes.Buffer
+	encoder := gob.NewEncoder(&data)
+	err := encoder.Encode(e)
 	if err != nil {
 		return err
 	}
 	if url == "" {
 		return errors.New("url is empty")
 	}
-	_, err = http.Post(fmt.Sprintf("%s/v1/enc/gen/public-key-switch", url), "application/json", bytes.NewReader(jsonData))
+	_, err = http.Post(fmt.Sprintf("%s/v1/enc/gen/public-key-switch", url), "application/json", &data)
 	return err
 }
 
-func (d *DataSpaceClientServiceImpl) SendPartialPublicKeySwitchAggregation(url string, e *multiparty.PublicKeySwitchShare) error {
+func (d *DataSpaceClientServiceImpl) SendPartialPublicKeySwitchAggregation(url string, e *mhe.KeySwitchingShare) error {
 	binaryData, err := e.MarshalBinary()
 	if err != nil {
 		return err
@@ -119,14 +126,16 @@ func (d *DataSpaceClientServiceImpl) SendPartialPublicKeySwitchAggregation(url s
 }
 
 func (d *DataSpaceClientServiceImpl) SendPublicKeyToClient(url string, pk *entities.PublicKeyExchange) error {
-	jsonData, err := json.Marshal(pk)
+	var data bytes.Buffer
+	encoder := gob.NewEncoder(&data)
+	err := encoder.Encode(pk)
 	if err != nil {
 		return err
 	}
 	if url == "" {
 		return errors.New("url is empty")
 	}
-	resp, err := http.Post(fmt.Sprintf("%s/v1/enc/public-key", url), "application/json", bytes.NewReader(jsonData))
+	resp, err := http.Post(fmt.Sprintf("%s/v1/enc/public-key", url), "application/json", &data)
 	if err != nil {
 		return err
 	}

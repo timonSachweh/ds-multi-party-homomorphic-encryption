@@ -1,13 +1,14 @@
 package services
 
 import (
+	"github.com/Pro7ech/lattigo/rlwe"
 	"github.com/robfig/cron/v3"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/api/httpclient"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/config"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/entities"
-	"github.com/tuneinsight/lattigo/v6/core/rlwe"
 	"golang.org/x/crypto/openpgp/errors"
 	"log"
+	"time"
 )
 
 type ClientManagementService interface {
@@ -130,6 +131,8 @@ func (c *ClientManagementServiceImpl) StartEncryptionSetupPhaseFor(modelName str
 	if c.modelManager[modelName] == nil {
 		return
 	}
+
+	time.Sleep(5 * time.Second)
 
 	clientUrls := c.modelManager[modelName].GetClientUrls()
 	c.encryptionService.CalculatePublicKey(clientUrls)

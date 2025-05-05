@@ -2,6 +2,7 @@ package httpclient
 
 import (
 	"bytes"
+	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -48,7 +49,7 @@ func (d *DataSpaceClientServiceImpl) RegisterClient() (entities.PrivacyParams, e
 	if err != nil {
 		return entities.PrivacyParams{}, err
 	}
-	decoder := json.NewDecoder(resp.Body)
+	decoder := gob.NewDecoder(resp.Body)
 	var privacyParams entities.PrivacyParams
 	err = decoder.Decode(&privacyParams)
 	return privacyParams, err

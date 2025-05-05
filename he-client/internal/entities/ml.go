@@ -1,6 +1,6 @@
 package entities
 
-import "github.com/tuneinsight/lattigo/v6/core/rlwe"
+import "github.com/Pro7ech/lattigo/rlwe"
 
 type MLModelWeights struct {
 	ModelName string    `json:"model_name"`

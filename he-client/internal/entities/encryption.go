@@ -1,18 +1,18 @@
 package entities
 
 import (
-	"github.com/tuneinsight/lattigo/v6/core/rlwe"
-	"github.com/tuneinsight/lattigo/v6/multiparty"
-	"github.com/tuneinsight/lattigo/v6/schemes/ckks"
+	"github.com/Pro7ech/lattigo/he/hefloat"
+	"github.com/Pro7ech/lattigo/mhe"
+	"github.com/Pro7ech/lattigo/rlwe"
 )
 
 type PrivacyParams struct {
-	CKKSParameters ckks.Parameters `json:"ckks_parameters"`
-	Tpk            rlwe.PublicKey  `json:"tpk"`
+	CKKSParameters hefloat.Parameters `json:"ckks_parameters"`
+	Tpk            rlwe.PublicKey     `json:"tpk"`
 }
 
 type CkgShareExchange struct {
-	Share multiparty.PublicKeyGenShare `json:"share"`
+	Share mhe.PublicKeyShare `json:"share"`
 }
 
 type PublicKeyExchange struct {
@@ -20,10 +20,9 @@ type PublicKeyExchange struct {
 }
 
 type RelinearizationKeyShare struct {
-	ShareOne multiparty.RelinearizationKeyGenShare `json:"share_one"`
-	ShareTwo multiparty.RelinearizationKeyGenShare `json:"share_two"`
+	Share mhe.RelinearizationKeyShare `json:"share"`
 }
 
 type PublicKeySwitchShare struct {
-	Share multiparty.PublicKeySwitchShare `json:"share"`
+	Share mhe.KeySwitchingShare `json:"share"`
 }

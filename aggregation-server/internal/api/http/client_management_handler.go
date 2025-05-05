@@ -1,9 +1,9 @@
 package http
 
 import (
+	"encoding/gob"
 	"encoding/json"
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/render"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/entities"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/services"
 	"log"
@@ -60,11 +60,16 @@ func (c *clientManagementRouteHandlerImpl) handleRegisterClient(w http.ResponseW
 	err := c.clientManagementService.AddClient(requestData)
 	if err != nil {
 		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
 	}
 
 	go c.clientManagementService.StartEncryptionSetupPhaseFor(requestData.ModelName)
 
-	render.JSON(w, r, c.encryptionService.GetInformation())
+	encoder := gob.NewEncoder(w)
+	err = encoder.Encode(c.encryptionService.GetInformation())
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 	w.WriteHeader(http.StatusOK)
 }
 

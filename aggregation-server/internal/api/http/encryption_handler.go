@@ -1,8 +1,8 @@
 package http
 
 import (
+	"encoding/gob"
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/render"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/services"
 	"net/http"
 )
@@ -29,5 +29,11 @@ func (e *encryptionHandlerImpl) Routes() *chi.Mux {
 }
 
 func (e *encryptionHandlerImpl) handleGetInformation(w http.ResponseWriter, r *http.Request) {
-	render.JSON(w, r, e.encryptionService.GetInformation())
+	encoder := gob.NewEncoder(w)
+	err := encoder.Encode(e.encryptionService.GetInformation())
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+	w.WriteHeader(http.StatusOK)
+	//render.JSON(w, r, e.encryptionService.GetInformation())
 }

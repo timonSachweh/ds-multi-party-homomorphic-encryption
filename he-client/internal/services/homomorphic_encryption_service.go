@@ -2,15 +2,13 @@ package services
 
 import (
 	"fmt"
+	"github.com/Pro7ech/lattigo/he/hefloat"
+	"github.com/Pro7ech/lattigo/mhe"
+	"github.com/Pro7ech/lattigo/rlwe"
+	"github.com/Pro7ech/lattigo/utils/sampling"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/entities"
-	"github.com/tuneinsight/lattigo/v6/multiparty"
-	"github.com/tuneinsight/lattigo/v6/ring"
-	"github.com/tuneinsight/lattigo/v6/utils/sampling"
 	"log"
 	"math"
-
-	"github.com/tuneinsight/lattigo/v6/core/rlwe"
-	"github.com/tuneinsight/lattigo/v6/schemes/ckks"
 )
 
 type HEService interface {
@@ -20,31 +18,28 @@ type HEService interface {
 	PartialShareAggregation(share entities.CkgShareExchange) entities.CkgShareExchange
 	PartialRelinKeyAggregation(share entities.RelinearizationKeyShare) entities.RelinearizationKeyShare
 	PartialPublicKeySwitchGeneration(weights entities.ClientModel)
-	PartialPublicKeySwitchAggregation(share multiparty.PublicKeySwitchShare) multiparty.PublicKeySwitchShare
+	PartialPublicKeySwitchAggregation(share mhe.KeySwitchingShare) mhe.KeySwitchingShare
 	SetPublicKey(key entities.PublicKeyExchange)
 }
 
 type HEServiceImpl struct {
-	params                        ckks.Parameters
-	encoder                       *ckks.Encoder
-	encryptor                     *rlwe.Encryptor
-	decryptor                     *rlwe.Decryptor
-	evaluator                     *ckks.Evaluator
-	secretKey                     *rlwe.SecretKey
-	publicKeyGenProtocol          multiparty.PublicKeyGenProtocol
-	ckgShare                      multiparty.PublicKeyGenShare
-	relinearizationKeyGenProtocol multiparty.RelinearizationKeyGenProtocol
-	rlkEphemSk                    *rlwe.SecretKey
-	rkgShareOne                   multiparty.RelinearizationKeyGenShare
-	rkgShareTwo                   multiparty.RelinearizationKeyGenShare
-	crp                           multiparty.PublicKeyGenCRP
-	crs                           sampling.PRNG
-	keyCrp                        multiparty.PublicKeyGenCRP
-	relinCrp                      multiparty.RelinearizationKeyGenCRP
-	publicKey                     rlwe.EncryptionKey
-	publicKeySwitchProtocol       multiparty.PublicKeySwitchProtocol
-	pcksShare                     multiparty.PublicKeySwitchShare
-	tpk                           *rlwe.PublicKey
+	params    hefloat.Parameters
+	encoder   *hefloat.Encoder
+	encryptor *rlwe.Encryptor
+	decryptor *rlwe.Decryptor
+	evaluator *hefloat.Evaluator
+
+	publicKeyGenProtocol          *mhe.PublicKeyProtocol
+	relinearizationKeyGenProtocol *mhe.RelinearizationKeyProtocol
+	publicKeySwitchProtocol       *mhe.KeySwitchingProtocol[rlwe.PublicKey]
+
+	secretKey  *rlwe.SecretKey
+	ckgShare   *mhe.PublicKeyShare
+	relinShare *mhe.RelinearizationKeyShare
+	pcksShare  *mhe.KeySwitchingShare
+	publicKey  rlwe.EncryptionKey
+	seed       [32]byte
+	tpk        *rlwe.PublicKey
 }
 
 func NewHEService() HEService {
@@ -73,13 +68,14 @@ func (h *HEServiceImpl) Encrypt(data []float32) ([]*rlwe.Ciphertext, error) {
 }
 
 func (h *HEServiceImpl) encrypt64(data []float64) (*rlwe.Ciphertext, error) {
-	pt := ckks.NewPlaintext(h.params, h.params.MaxLevel())
+	pt := hefloat.NewPlaintext(h.params, h.params.MaxLevel())
 
 	if err := h.encoder.Encode(data, pt); err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
-	ciphertext, err := h.encryptor.EncryptNew(pt)
+	ciphertext := hefloat.NewCiphertext(h.params, 1, h.params.MaxLevel())
+	err := h.encryptor.Encrypt(pt, ciphertext)
 	return ciphertext, err
 }
 
@@ -115,28 +111,24 @@ func (h *HEServiceImpl) decrypt64(ciphertext *rlwe.Ciphertext, vectorLength int)
 }
 
 func (h *HEServiceImpl) SetParameters(configuration entities.PrivacyParams) {
+	h.seed = sampling.NewSeed()
 	h.params = configuration.CKKSParameters
 	h.tpk = &configuration.Tpk
-	crs, err := sampling.NewKeyedPRNG([]byte{'l', 'a', 't', 't', 'i', 'g', 'o'})
-	if err != nil {
-		panic(err)
-	}
-	h.crs = crs
-	h.encoder = ckks.NewEncoder(h.params)
+	h.encoder = hefloat.NewEncoder(h.params)
 
-	h.publicKeyGenProtocol = multiparty.NewPublicKeyGenProtocol(h.params)
+	h.publicKeyGenProtocol = mhe.NewPublicKeyProtocol(h.params)
+	h.relinearizationKeyGenProtocol = mhe.NewRelinearizationKeyProtocol(h.params)
+	h.publicKeySwitchProtocol = mhe.NewKeySwitchingProtocol[rlwe.PublicKey](h.params)
+
 	h.secretKey = rlwe.NewKeyGenerator(h.params).GenSecretKeyNew()
-	h.ckgShare = h.publicKeyGenProtocol.AllocateShare()
-	h.keyCrp = h.publicKeyGenProtocol.SampleCRP(h.crs)
-	h.publicKeyGenProtocol.GenShare(h.secretKey, h.keyCrp, &h.ckgShare)
+	h.ckgShare = h.publicKeyGenProtocol.Allocate()
+	h.relinShare = h.relinearizationKeyGenProtocol.Allocate()
+	h.pcksShare = h.publicKeySwitchProtocol.Allocate(h.params.MaxLevel())
 
-	h.relinearizationKeyGenProtocol = multiparty.NewRelinearizationKeyGenProtocol(h.params)
-	h.relinCrp = h.relinearizationKeyGenProtocol.SampleCRP(h.crs)
-	h.rlkEphemSk, h.rkgShareOne, h.rkgShareTwo = h.relinearizationKeyGenProtocol.AllocateShare()
-	h.relinearizationKeyGenProtocol.GenShareRoundOne(h.secretKey, h.relinCrp, h.rlkEphemSk, &h.rkgShareOne)
-
-	h.publicKeySwitchProtocol, _ = multiparty.NewPublicKeySwitchProtocol(h.params, ring.DiscreteGaussian{Sigma: 1 << 30, Bound: 6 * (1 << 30)})
-	h.pcksShare = h.publicKeySwitchProtocol.AllocateShare(h.params.MaxLevel())
+	err := h.publicKeyGenProtocol.Gen(h.secretKey, h.seed, h.ckgShare)
+	if err != nil {
+		return
+	}
 }
 
 func (h *HEServiceImpl) SetPublicKey(key entities.PublicKeyExchange) {
@@ -144,24 +136,32 @@ func (h *HEServiceImpl) SetPublicKey(key entities.PublicKeyExchange) {
 }
 
 func (h *HEServiceImpl) PartialShareAggregation(share entities.CkgShareExchange) entities.CkgShareExchange {
-	h.publicKeyGenProtocol.AggregateShares(h.ckgShare, share.Share, &h.ckgShare)
+	err := h.publicKeyGenProtocol.Aggregate(&share.Share, h.ckgShare, h.ckgShare)
+	if err != nil {
+		return entities.CkgShareExchange{}
+	}
 	log.Println("partial share aggregation done")
 	return share
 }
 
 func (h *HEServiceImpl) PartialRelinKeyAggregation(share entities.RelinearizationKeyShare) entities.RelinearizationKeyShare {
-	h.relinearizationKeyGenProtocol.AggregateShares(h.rkgShareOne, share.ShareOne, &share.ShareOne)
-	h.relinearizationKeyGenProtocol.AggregateShares(h.rkgShareTwo, share.ShareTwo, &share.ShareTwo)
+	err := h.relinearizationKeyGenProtocol.Aggregate(&share.Share, h.relinShare, &share.Share)
+	if err != nil {
+		return entities.RelinearizationKeyShare{}
+	}
 	log.Println("partial relinearization key aggregation done")
 	return share
 }
 
 func (h *HEServiceImpl) PartialPublicKeySwitchGeneration(weights entities.ClientModel) {
-	h.publicKeySwitchProtocol.GenShare(h.secretKey, h.tpk, weights.WeightsAsCiphertext()[0], &h.pcksShare)
+	err := h.publicKeySwitchProtocol.Gen(h.secretKey, h.tpk, float64(1<<30), weights.WeightsAsCiphertext()[0], h.pcksShare)
+	if err != nil {
+		return
+	}
 }
 
-func (h *HEServiceImpl) PartialPublicKeySwitchAggregation(share multiparty.PublicKeySwitchShare) multiparty.PublicKeySwitchShare {
-	err := h.publicKeySwitchProtocol.AggregateShares(h.pcksShare, share, &share)
+func (h *HEServiceImpl) PartialPublicKeySwitchAggregation(share mhe.KeySwitchingShare) mhe.KeySwitchingShare {
+	err := h.publicKeySwitchProtocol.Aggregate(&share, h.pcksShare, &share)
 	if err != nil {
 		return share
 	}

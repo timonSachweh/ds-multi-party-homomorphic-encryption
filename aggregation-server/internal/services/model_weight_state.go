@@ -2,7 +2,7 @@ package services
 
 import (
 	"errors"
-	"github.com/tuneinsight/lattigo/v6/core/rlwe"
+	"github.com/Pro7ech/lattigo/rlwe"
 	"maps"
 	"slices"
 	"time"
