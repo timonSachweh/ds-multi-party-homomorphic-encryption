@@ -8,18 +8,21 @@ from .dataloader import get_dataloaders
 
 
 class ModelService():
-    def __init__(self, model_config: config.ModelConfig):   
+    def __init__(self, model_config: config.ModelConfig, dataset_config: config.DataConfig):
         self.config = model_config
+        self.dataset_config = dataset_config
         self.device = get_device(self.config.no_cuda, self.config.no_mps)
         self.model = Net().to(self.device)
         self.transform = get_transforms()
-    
+
     def train(self):
         torch.manual_seed(self.config.seed)
-        
+
         train_kwargs, test_kwargs = get_kwargs(self.config, self.device)
-        
-        train_loader, test_loader = get_dataloaders(transforms=self.transform, train_kwargs=train_kwargs, test_kwargs=test_kwargs)
+
+        train_loader, test_loader = get_dataloaders(transforms=self.transform, party_idx=self.dataset_config.party,
+                                                    num_parties=self.dataset_config.num_parties,
+                                                    train_kwargs=train_kwargs, test_kwargs=test_kwargs)
 
         self.model = self.model.to(self.device)
         optimizer = torch.optim.Adadelta(self.model.parameters(), lr=self.config.lr)
@@ -28,9 +31,9 @@ class ModelService():
             self.train_model(train_loader, optimizer, epoch)
             self.test_model(test_loader)
             scheduler.step()
-        
+
         torch.save(self.model.state_dict(), self.config.model_path)
-    
+
     def predict(self, data):
         with torch.no_grad():
             data = torch.tensor(data).to(self.device)
@@ -40,11 +43,10 @@ class ModelService():
 
     def get_model_params(self):
         return torch.nn.utils.parameters_to_vector(self.model.parameters()).detach().cpu().numpy()
-    
+
     def set_model_params(self, params):
         print("Model parameters updated from aggregation server")
         torch.nn.utils.vector_to_parameters(torch.tensor(params).to(self.device), self.model.parameters())
-    
 
     def train_model(self, train_loader, optimizer, epoch):
         self.model.train()
@@ -58,8 +60,8 @@ class ModelService():
             if batch_idx % self.config.log_interval == 0:
                 print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                     epoch, batch_idx * len(data), len(train_loader.dataset),
-                    100. * batch_idx / len(train_loader), loss.item()))
-    
+                           100. * batch_idx / len(train_loader), loss.item()))
+
     def test_model(self, test_loader):
         self.model.eval()
         test_loss = 0
@@ -71,7 +73,7 @@ class ModelService():
                 test_loss += F.nll_loss(output, target, reduction='sum').item()  # sum up batch loss
                 pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
                 correct += pred.eq(target.view_as(pred)).sum().item()
-        
+
         test_loss /= len(test_loader.dataset)
 
         print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(

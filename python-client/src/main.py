@@ -15,7 +15,7 @@ app = Flask(__name__)
 app.logger.setLevel(logging.ERROR)
 c = config.Config()
 
-model_service = ml.ModelService(c.model)
+model_service = ml.ModelService(c.model, c.data)
 
 @app.route('/health')
 @disable_logging

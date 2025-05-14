@@ -6,6 +6,7 @@ class Config:
     def __init__(self):
         self.server = ServerConfig()
         self.model = ModelConfig()
+        self.data = DataConfig()
 
 class ServerConfig:
     def __init__(self):
@@ -27,3 +28,9 @@ class ModelConfig:
         self.no_mps = bool(os.getenv("ML_NO_MPS", False))
         self.seed = int(os.getenv("ML_SEED", 1))
         self.log_interval = int(os.getenv("ML_LOG_INTERVAL", 10))
+
+
+class DataConfig:
+    def __init__(self):
+        self.num_parties = int(os.getenv("DATA_SPLIT_NUM_PARTIES", 12))
+        self.party = int(os.getenv("DATA_SPLIT_PARTY", 0))
