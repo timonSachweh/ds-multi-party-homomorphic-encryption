@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/zsh
 
 BASE_PATH="$(dirname "$(readlink -f "$0")")/.."
 
@@ -7,7 +7,7 @@ run_services() {
     echo "Starting services..."
 
     # Start a screen session for each service
-    screen -dmS "he-aggregation-service" bash -c "\
+    screen -dmS "he-aggregation-service" zsh -c "\
         source '${BASE_PATH}/env/server.env'; \
         go run ${BASE_PATH}/aggregation-server/cmd/main.go"
 
@@ -18,7 +18,7 @@ run_services() {
         PYTHON_PORT=$((9090+i))
         PARTY_IDX=$((i-1))
         echo "Starting client $i with ports: ${GO_PORT} and ${PYTHON_PORT}..."
-        screen -dmS "he-client-${i}-go" bash -c "\
+        screen -dmS "he-client-${i}-go" zsh -c "\
             source '${BASE_PATH}/env/client1.env'; \
             export HTTP_PORT=${GO_PORT}; \
             export EXTERNAL_URL=http://localhost:${GO_PORT}; \
@@ -26,7 +26,7 @@ run_services() {
             export DATA_SPLIT_PARTY=${PARTY_IDX}; \
             export DATA_SPLIT_NUM_PARTIES=$1; \
             go run ${BASE_PATH}/he-client/cmd/main.go"
-        screen -dmS "he-client-${i}-python" bash -c "\
+        screen -dmS "he-client-${i}-python" zsh -c "\
             source '${BASE_PATH}/env/client1.env'; \
             export HTTP_PORT=${GO_PORT}; \
             export EXTERNAL_URL=http://localhost:${GO_PORT}; \
@@ -51,25 +51,25 @@ stop_services() {
     # Kill the screen session
     screen -S "he-aggregation-service" -p 0 -X stuff $'\003'
 
-    screen -S "he-client-1-go" -p 0 -X stuff $'\003'
-    screen -S "he-client-1-python" -p 0 -X stuff $'\003'
-
-    screen -S "he-client-2-go" -p 0 -X stuff $'\003'
-    screen -S "he-client-2-python" -p 0 -X stuff $'\003'
+    screen -ls | grep -E "he-client-[0-9]+-(go|python)" | awk '{print $1}' | while read -r session; do
+        echo "Stopping session: $session"
+        screen -S "$session" -p 0 -X stuff $'\003'
+    done
     
     echo "All services have been stopped."
 }
 
 # Check the first parameter
-if [ "$1" = "run" ]; then
+if [ "$1" = "start" ] || [ "$1" = "run" ] || [ "$1" = "up" ]; then
     NUM_CLIENTS=2
     if [ -n "$2" ]; then
         NUM_CLIENTS=$2
     fi
     run_services $NUM_CLIENTS
-elif [ "$1" = "down" ]; then
+elif [ "$1" = "stop" ] || [ "$1" = "down" ]; then
     stop_services
 else
-    echo "Usage: $0 [run|down]"
+    echo "Usage: $0 [run|start|up] [num_clients]"
+    echo "       $0 [stop|down]"
     exit 1
 fi
