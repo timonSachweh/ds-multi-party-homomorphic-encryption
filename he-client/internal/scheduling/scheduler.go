@@ -1,8 +1,10 @@
 package scheduling
 
 import (
-	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/services"
 	"log"
+
+	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/services"
+	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/utils"
 
 	"github.com/robfig/cron/v3"
 )
@@ -19,6 +21,6 @@ func InitializeCrons(mlService services.MLService) *cron.Cron {
 }
 
 func updateModel(mlService services.MLService) {
-	log.Println("Scheduler: Updating model")
-	mlService.RetrainAndSendUpdatedModelWeights()
+	utils.PrintMemoryStats("Scheduler - updateModel")
+	utils.PrintTimeForFunction("Scheduler - updateModel", mlService.RetrainAndSendUpdatedModelWeights)
 }

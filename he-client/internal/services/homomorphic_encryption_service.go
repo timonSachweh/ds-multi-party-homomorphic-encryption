@@ -2,13 +2,15 @@ package services
 
 import (
 	"fmt"
+	"math"
+	"time"
+
 	"github.com/Pro7ech/lattigo/he/hefloat"
 	"github.com/Pro7ech/lattigo/mhe"
 	"github.com/Pro7ech/lattigo/rlwe"
 	"github.com/Pro7ech/lattigo/utils/sampling"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/entities"
-	"log"
-	"math"
+	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/utils"
 )
 
 type HEService interface {
@@ -47,6 +49,8 @@ func NewHEService() HEService {
 }
 
 func (h *HEServiceImpl) Encrypt(data []float32) ([]*rlwe.Ciphertext, error) {
+	utils.PrintMemoryStats("HEService - Encrypt")
+	defer utils.PrintTime(time.Now(), "HEService - Encrypt")
 	converted := make([]float64, len(data))
 	for i, v := range data {
 		converted[i] = float64(v)
@@ -64,6 +68,7 @@ func (h *HEServiceImpl) Encrypt(data []float32) ([]*rlwe.Ciphertext, error) {
 		}
 		ciphertexts[i] = ciphertext
 	}
+	utils.PrintMemoryStats("HEService - Encrypt - after encryption")
 	return ciphertexts, nil
 }
 
@@ -111,6 +116,8 @@ func (h *HEServiceImpl) decrypt64(ciphertext *rlwe.Ciphertext, vectorLength int)
 }
 
 func (h *HEServiceImpl) SetParameters(configuration entities.PrivacyParams) {
+	utils.PrintMemoryStats("HEService - SetParameters")
+	defer utils.PrintTime(time.Now(), "HEService - SetParameters")
 	h.seed = sampling.NewSeed()
 	h.params = configuration.CKKSParameters
 	h.tpk = &configuration.Tpk
@@ -129,6 +136,7 @@ func (h *HEServiceImpl) SetParameters(configuration entities.PrivacyParams) {
 	if err != nil {
 		return
 	}
+	utils.PrintMemoryStats("HEService - SetParameters - after public key generation")
 }
 
 func (h *HEServiceImpl) SetPublicKey(key entities.PublicKeyExchange) {
@@ -136,35 +144,41 @@ func (h *HEServiceImpl) SetPublicKey(key entities.PublicKeyExchange) {
 }
 
 func (h *HEServiceImpl) PartialShareAggregation(share entities.CkgShareExchange) entities.CkgShareExchange {
+	utils.PrintMemoryStats("HEService - PartialShareAggregation")
+	defer utils.PrintTime(time.Now(), "HEService - PartialShareAggregation")
 	err := h.publicKeyGenProtocol.Aggregate(&share.Share, h.ckgShare, h.ckgShare)
 	if err != nil {
 		return entities.CkgShareExchange{}
 	}
-	log.Println("partial share aggregation done")
+	utils.PrintMemoryStats("HEService - PartialShareAggregation - after aggregation")
 	return share
 }
 
 func (h *HEServiceImpl) PartialRelinKeyAggregation(share entities.RelinearizationKeyShare) entities.RelinearizationKeyShare {
+	utils.PrintMemoryStats("HEService - PartialRelinKeyAggregation")
+	defer utils.PrintTime(time.Now(), "HEService - PartialRelinKeyAggregation")
 	err := h.relinearizationKeyGenProtocol.Aggregate(&share.Share, h.relinShare, &share.Share)
 	if err != nil {
 		return entities.RelinearizationKeyShare{}
 	}
-	log.Println("partial relinearization key aggregation done")
+	utils.PrintMemoryStats("HEService - PartialRelinKeyAggregation - after aggregation")
 	return share
 }
 
 func (h *HEServiceImpl) PartialPublicKeySwitchGeneration(weights entities.ClientModel) {
-	err := h.publicKeySwitchProtocol.Gen(h.secretKey, h.tpk, float64(1<<30), weights.WeightsAsCiphertext()[0], h.pcksShare)
-	if err != nil {
-		return
-	}
+	utils.PrintMemoryStats("HEService - PublicKeySwitchGeneration")
+	defer utils.PrintTime(time.Now(), "HEService - PublicKeySwitchGeneration")
+	h.publicKeySwitchProtocol.Gen(h.secretKey, h.tpk, float64(1<<30), weights.WeightsAsCiphertext()[0], h.pcksShare)
+	utils.PrintMemoryStats("HEService - PublicKeySwitchGeneration - after generation")
 }
 
 func (h *HEServiceImpl) PartialPublicKeySwitchAggregation(share mhe.KeySwitchingShare) mhe.KeySwitchingShare {
+	utils.PrintMemoryStats("HEService - PartialPublicKeySwitchAggregation")
+	defer utils.PrintTime(time.Now(), "HEService - PartialPublicKeySwitchAggregation")
 	err := h.publicKeySwitchProtocol.Aggregate(&share, h.pcksShare, &share)
 	if err != nil {
 		return share
 	}
-	log.Println("partial public key switch aggregation done")
+	utils.PrintMemoryStats("HEService - PartialPublicKeySwitchAggregation - after aggregation")
 	return share
 }

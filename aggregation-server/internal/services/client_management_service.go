@@ -1,14 +1,16 @@
 package services
 
 import (
+	"log"
+	"time"
+
 	"github.com/Pro7ech/lattigo/rlwe"
 	"github.com/robfig/cron/v3"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/api/httpclient"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/config"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/entities"
+	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/utils"
 	"golang.org/x/crypto/openpgp/errors"
-	"log"
-	"time"
 )
 
 type ClientManagementService interface {
@@ -53,27 +55,37 @@ func (c *ClientManagementServiceImpl) AddNewData(data entities.ClientModel) erro
 }
 
 func (c *ClientManagementServiceImpl) UpdateClients() {
+	utils.PrintMemoryStats("UpdateClients - Initiated")
 	for key, modelManager := range c.modelManager {
 		if !modelManager.ModelCanAggregate() {
 			continue
 		}
 		log.Println("Updating clients for model: " + key)
 		_, modelWeights, clientUrls, weightLength := modelManager.GetClients()
+		utils.PrintMemoryStats("UpdateClients - BeforeAggregation")
 		aggregatedModel := c.aggregateWeights(key, modelWeights, weightLength)
+		utils.PrintMemoryStats("UpdateClients - AfterAggregation")
 		c.initiateKeySwitchGeneration(clientUrls, aggregatedModel)
+		utils.PrintMemoryStats("UpdateClients - AfterKeySwitchGeneration")
 		c.encryptionService.CalculatePublicKeySwitchShare(modelManager.GetClientUrls())
+		utils.PrintMemoryStats("UpdateClients - AfterPublicKeySwitchShareCalculation")
 
 		ciphertextWeights := aggregatedModel.WeightsAsCiphertext()
 		ciphertextWeights = c.encryptionService.PublicKeySwitch(ciphertextWeights)
+
+		utils.PrintMemoryStats("UpdateClients - AfterPublicKeySwitch")
 
 		weights := c.encryptionService.Decrypt(ciphertextWeights, weightLength)
 		log.Printf("Weights decrypted with length: %d\n", len(weights))
 		c.updateClientModels(modelManager.GetClientUrls(), weights, key)
 		modelManager.ResetClientWeights()
+
+		utils.PrintMemoryStats("UpdateClients - AfterUpdateClients")
 	}
 }
 
 func (c *ClientManagementServiceImpl) aggregateWeights(key string, weights [][]*rlwe.Ciphertext, weightLength int) entities.ClientModel {
+	utils.PrintTime(time.Now(), "aggregateWeights")
 	updatedModelWeights := entities.ClientModel{
 		ModelName: key,
 		Length:    weightLength,
@@ -83,6 +95,7 @@ func (c *ClientManagementServiceImpl) aggregateWeights(key string, weights [][]*
 }
 
 func (c *ClientManagementServiceImpl) initiateKeySwitchGeneration(clientUrls []string, clientModel entities.ClientModel) {
+	utils.PrintTime(time.Now(), "initiateKeySwitchGeneration")
 	for _, client := range clientUrls {
 		err := c.httpClient.SendPartialPublicKeySwitchGenerate(client, &clientModel)
 		if err != nil {
@@ -93,6 +106,7 @@ func (c *ClientManagementServiceImpl) initiateKeySwitchGeneration(clientUrls []s
 }
 
 func (c *ClientManagementServiceImpl) RequestClientTraining(modelName string) {
+	utils.PrintTime(time.Now(), "requestClientTraining")
 	if _, ok := c.modelManager[modelName]; !ok {
 		log.Println("No such model and client combination is available")
 		return
@@ -107,6 +121,7 @@ func (c *ClientManagementServiceImpl) RequestClientTraining(modelName string) {
 }
 
 func (c *ClientManagementServiceImpl) AddClient(clientModel entities.ClientModel) error {
+	utils.PrintTime(time.Now(), "addClient")
 	if clientModel.ModelName == "" || clientModel.ClientUrl == "" {
 		return errors.InvalidArgumentError("Client model name or client url is empty")
 	}
@@ -118,6 +133,7 @@ func (c *ClientManagementServiceImpl) AddClient(clientModel entities.ClientModel
 }
 
 func (c *ClientManagementServiceImpl) GetClientsForModel(name string) ([]string, error) {
+	utils.PrintTime(time.Now(), "getClientsForModel")
 	if name == "" {
 		return nil, errors.InvalidArgumentError("model name is required")
 	}
@@ -131,16 +147,21 @@ func (c *ClientManagementServiceImpl) StartEncryptionSetupPhaseFor(modelName str
 	if c.modelManager[modelName] == nil {
 		return
 	}
+	utils.PrintTime(time.Now(), "startEncryptionSetupPhaseFor")
 
 	time.Sleep(5 * time.Second)
-
+	utils.PrintMemoryStats("ClientManagementService - EncryptionSetupBegin")
 	clientUrls := c.modelManager[modelName].GetClientUrls()
 	c.encryptionService.CalculatePublicKey(clientUrls)
+	utils.PrintMemoryStats("ClientManagementService - EncryptionSetupPublicKey")
 	c.encryptionService.PublishPublicKey(clientUrls)
+	utils.PrintMemoryStats("ClientManagementService - EncryptionSetupPublicKeyPushed")
 	c.encryptionService.CalculateRelinearizationKeys(clientUrls)
+	utils.PrintMemoryStats("ClientManagementService - EncryptionSetupRelinearizationKeys")
 }
 
 func (c *ClientManagementServiceImpl) updateClientModels(urls []string, weights []float64, key string) {
+	utils.PrintTime(time.Now(), "updateClientModels")
 	modelUpdateResponse := entities.ModelClientUpdate{
 		ModelName: key,
 	}
