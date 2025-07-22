@@ -85,7 +85,7 @@ func (c *ClientManagementServiceImpl) UpdateClients() {
 }
 
 func (c *ClientManagementServiceImpl) aggregateWeights(key string, weights [][]*rlwe.Ciphertext, weightLength int) entities.ClientModel {
-	utils.PrintTime(time.Now(), "aggregateWeights")
+	defer utils.PrintTime(time.Now(), "aggregateWeights")
 	updatedModelWeights := entities.ClientModel{
 		ModelName: key,
 		Length:    weightLength,
@@ -95,7 +95,7 @@ func (c *ClientManagementServiceImpl) aggregateWeights(key string, weights [][]*
 }
 
 func (c *ClientManagementServiceImpl) initiateKeySwitchGeneration(clientUrls []string, clientModel entities.ClientModel) {
-	utils.PrintTime(time.Now(), "initiateKeySwitchGeneration")
+	defer utils.PrintTime(time.Now(), "initiateKeySwitchGeneration")
 	for _, client := range clientUrls {
 		err := c.httpClient.SendPartialPublicKeySwitchGenerate(client, &clientModel)
 		if err != nil {
@@ -106,7 +106,7 @@ func (c *ClientManagementServiceImpl) initiateKeySwitchGeneration(clientUrls []s
 }
 
 func (c *ClientManagementServiceImpl) RequestClientTraining(modelName string) {
-	utils.PrintTime(time.Now(), "requestClientTraining")
+	defer utils.PrintTime(time.Now(), "requestClientTraining")
 	if _, ok := c.modelManager[modelName]; !ok {
 		log.Println("No such model and client combination is available")
 		return
@@ -121,7 +121,7 @@ func (c *ClientManagementServiceImpl) RequestClientTraining(modelName string) {
 }
 
 func (c *ClientManagementServiceImpl) AddClient(clientModel entities.ClientModel) error {
-	utils.PrintTime(time.Now(), "addClient")
+	defer utils.PrintTime(time.Now(), "addClient")
 	if clientModel.ModelName == "" || clientModel.ClientUrl == "" {
 		return errors.InvalidArgumentError("Client model name or client url is empty")
 	}
@@ -133,7 +133,7 @@ func (c *ClientManagementServiceImpl) AddClient(clientModel entities.ClientModel
 }
 
 func (c *ClientManagementServiceImpl) GetClientsForModel(name string) ([]string, error) {
-	utils.PrintTime(time.Now(), "getClientsForModel")
+	defer utils.PrintTime(time.Now(), "getClientsForModel")
 	if name == "" {
 		return nil, errors.InvalidArgumentError("model name is required")
 	}
@@ -147,7 +147,7 @@ func (c *ClientManagementServiceImpl) StartEncryptionSetupPhaseFor(modelName str
 	if c.modelManager[modelName] == nil {
 		return
 	}
-	utils.PrintTime(time.Now(), "startEncryptionSetupPhaseFor")
+	defer utils.PrintTime(time.Now(), "startEncryptionSetupPhaseFor")
 
 	time.Sleep(5 * time.Second)
 	utils.PrintMemoryStats("ClientManagementService - EncryptionSetupBegin")
@@ -161,7 +161,7 @@ func (c *ClientManagementServiceImpl) StartEncryptionSetupPhaseFor(modelName str
 }
 
 func (c *ClientManagementServiceImpl) updateClientModels(urls []string, weights []float64, key string) {
-	utils.PrintTime(time.Now(), "updateClientModels")
+	defer utils.PrintTime(time.Now(), "updateClientModels")
 	modelUpdateResponse := entities.ModelClientUpdate{
 		ModelName: key,
 	}

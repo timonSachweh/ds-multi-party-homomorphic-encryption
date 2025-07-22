@@ -2,8 +2,9 @@ package main
 
 import (
 	"context"
-	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/services"
 	"log"
+
+	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/services"
 
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/api/http"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/api/httpclient"
@@ -17,6 +18,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.SetFlags(log.LstdFlags | log.Lmicroseconds)
 
 	dataspaceClient := httpclient.NewDataSpaceClientService(cfg.PrivacyMLConfiguration)
 	pythonClient := httpclient.NewPythonClientService(cfg.PythonConfiguration)
