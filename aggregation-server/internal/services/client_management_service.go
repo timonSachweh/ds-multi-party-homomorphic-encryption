@@ -37,7 +37,7 @@ func NewClientManagementService(httpClient httpclient.DataSpaceClientService, en
 		encryptionService:  encryptionService,
 	}
 	c := cron.New()
-	c.AddFunc("@every 00h00m5s", func() { aggregationService.UpdateClients() })
+	c.AddFunc("@every 00h00m15s", func() { aggregationService.UpdateClients() })
 	c.Start()
 
 	return aggregationService
