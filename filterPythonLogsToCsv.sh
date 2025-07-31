@@ -24,8 +24,8 @@ touch "$outputData"
 echo "Date,EndTime,Name,Alloc,TotalAlloc,Sys" > "$outputData"
 
 while IFS= read -r line; do
-  timeData=$(echo "$line" | sed -rnE 's/^([0-9]{4}-[0-9]{2}-[0-9]{2}) ([0-9]{2}:[0-9]{2}:[0-9]{2}),([0-9]{3}) - utils\.logging - INFO - (.*): ([0-9]+.[0-9]*)s/\1,\2.\3,\4,\5/p')
-  dataData=$(echo "$line" | sed -rnE 's/^([0-9]{4}-[0-9]{2}-[0-9]{2}) ([0-9]{2}:[0-9]{2}:[0-9]{2}),([0-9]{3}) - utils\.logging - INFO - (.*) usage: ([0-9]+.[0-9]*) MB, Virtual Memory: ([0-9]+.[0-9]*) MB/\1,\2.\3,\4,\5,\6/p')
+  timeData=$(echo "$line" | sed -rnE 's/^([0-9]{4}-[0-9]{2}-[0-9]{2}) ([0-9]{2}:[0-9]{2}:[0-9]{2}),([0-9]{3}) - .* - INFO - (.*): ([0-9]+.[0-9]*)s/\1,\2.\3,\4,\5/p')
+  dataData=$(echo "$line" | sed -rnE 's/^([0-9]{4}-[0-9]{2}-[0-9]{2}) ([0-9]{2}:[0-9]{2}:[0-9]{2}),([0-9]{3}) - .* - INFO - (.*) usage: ([0-9]+.[0-9]*) MB, Virtual Memory: ([0-9]+.[0-9]*) MB/\1,\2.\3,\4,\5,\6/p')
   if [[ -n "$timeData" ]]; then
     echo "$timeData" >> "$outputTime"
   elif [[ -n "$dataData" ]]; then
