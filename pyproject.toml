@@ -1,0 +1,15 @@
+[project]
+name = "ds-multi-party-homomorphic-encryption"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "flask<=3",
+    "numpy>=2",
+    "pandas>=2",
+    "plotly>=5.20.0",
+    "psutil>=7.0.0",
+    "torch>=2.4.0",
+    "torchvision>=0.20.0",
+]

@@ -9,5 +9,4 @@ screen -L -Logfile "${BASE_PATH}/logs/global-python.log" -dmS "global-python" zs
             export PYTHON_PORT=5001; \
             export DATA_SPLIT_PARTY=0; \
             export DATA_SPLIT_NUM_PARTIES=1; \
-            pyenv activate ml; \
-            python ${BASE_PATH}/python-client/src/main.py"
+            uv run ${BASE_PATH}/python-client/src/main.py"
