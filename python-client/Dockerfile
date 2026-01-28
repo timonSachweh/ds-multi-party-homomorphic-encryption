@@ -1,11 +1,9 @@
-FROM python:3.11
-
-RUN pip install gunicorn
-
+FROM pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
 WORKDIR /app
 
-COPY ./requirements.txt /app/requirements.txt
-RUN pip install -r requirements.txt
+#COPY ./requirements.txt /app/requirements.txt
+#RUN pip install -r requirements.txt
+RUN python3 -m pip install numpy flask
 
 COPY ./src/ /app
 
