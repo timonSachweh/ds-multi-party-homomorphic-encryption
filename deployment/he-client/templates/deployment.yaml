@@ -1,13 +1,13 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "he-client.fullname" . }}
+  name: {{ include "heclient.fullname" . }}
   labels:
-    {{- include "he-client.labels" . | nindent 4 }}
+    {{- include "heclient.labels" . | nindent 4 }}
 spec:
   selector:
     matchLabels:
-      {{- include "he-client.selectorLabels" . | nindent 6 }}
+      {{- include "heclient.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -15,7 +15,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "he-client.labels" . | nindent 8 }}
+        {{- include "heclient.labels" . | nindent 8 }}
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -36,15 +36,15 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           env:
             - name: EXTERNAL_URL
-              value: ""
+              value: 'http://{{ include "heclient.fullname" . }}:{{ .Values.service.goPort }}'
             - name: HTTP_PORT
-              value: "{{ .service.goPort }}"
+              value: "{{ .Values.service.goPort }}"
             - name: AGGREGATION_SERVICE_URL
-              value: {{ .service.aggregationService }}
+              value: {{ .Values.service.aggregationService }}
             - name: PYTHON_HOST
-              value: "{{ .he-client.fullname }}"
+              value: {{ include "heclient.fullname" . }}
             - name: PYTHON_PORT
-              value: "{{ .service.pythonPort }}"
+              value: "{{ .Values.service.pythonPort }}"
             - name: PYTHON_API_PATH
               value: "/api"
         - name: "{{.Chart.Name }}-python"
@@ -62,25 +62,25 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           env:
             - name: PYTHON_HOST
-              value: "{{ .he-client.fullname }}"
+              value: {{ include "heclient.fullname" . }}
             - name: PYTHON_PORT
-              value: "{{ .service.pythonPort }}"
+              value: "{{ .Values.service.pythonPort }}"
             - name: PYTHON_API_PATH
               value: "/api"
             - name: ML_MODEL_NAME
-              value: "{{ .service.mlModelName }}"
+              value: "{{ .Values.service.mlModelName }}"
             - name: ML_MODEL_VERSION
-              value: "{{ .service.mlModelVersion }}"
+              value: "{{ .Values.service.mlModelVersion }}"
             - name: ML_MODEL_PATH
-              value: "{{ .service.mlModelPath }}"
+              value: "{{ .Values.service.mlModelPath }}"
             - name: ML_EPOCHS
-              value: "{{ .service.mlEpochs }}"
+              value: "{{ .Values.service.mlEpochs }}"
             - name: ML_LOG_INTERVAL
-              value: "{{ .service.mlLogInterval }}"
+              value: "{{ .Values.service.mlLogInterval }}"
             - name: DATA_SPLIT_NUM_PARTIES
-              value: "{{ .service.numClients }}"
+              value: "{{ .Values.numClients }}"
             - name: DATA_SPLIT_PARTY
-              value: "{{ .service.dataSplitParty }}"
+              value: "{{ .Values.clientId }}"
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

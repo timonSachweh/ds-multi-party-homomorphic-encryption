@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "he-client.fullname" . }}
+  name: {{ include "heclient.fullname" . }}
   labels:
-    {{- include "he-client.labels" . | nindent 4 }}
+    {{- include "heclient.labels" . | nindent 4 }}
 spec:
   type: {{ .Values.service.type }}
   ports:
@@ -16,4 +16,4 @@ spec:
       protocol: TCP
       name: pythonPort
   selector:
-    {{- include "he-client.selectorLabels" . | nindent 4 }}
+    {{- include "heclient.selectorLabels" . | nindent 4 }}

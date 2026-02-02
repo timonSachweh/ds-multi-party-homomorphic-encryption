@@ -18,6 +18,9 @@ image:
 nameOverride: ""
 fullnameOverride: ""
 
+clientId: 0
+numClients: 2
+
 
 # This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
 service:
@@ -26,8 +29,6 @@ service:
   # This sets the ports more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#field-spec-ports
   goPort: 8080
   pythonPort: 5000
-  dataSplitParty: 0
-  numClients: 2
   aggregationService: http://aggregation-server:8080/v1
   mlModelName: mnist
   mlModelVersion: 0.1
