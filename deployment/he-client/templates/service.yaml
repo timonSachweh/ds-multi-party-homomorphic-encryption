@@ -7,9 +7,13 @@ metadata:
 spec:
   type: {{ .Values.service.type }}
   ports:
-    - port: {{ .Values.service.port }}
-      targetPort: http
+    - port: {{ .Values.service.goPort }}
+      targetPort: goPort
       protocol: TCP
-      name: http
+      name: goPort
+    - port: {{ .Values.service.pythonPort }}
+      targetPort: pythonPort
+      protocol: TCP
+      name: pythonPort
   selector:
     {{- include "he-client.selectorLabels" . | nindent 4 }}

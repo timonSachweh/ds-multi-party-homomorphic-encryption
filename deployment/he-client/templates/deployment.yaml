@@ -5,9 +5,6 @@ metadata:
   labels:
     {{- include "he-client.labels" . | nindent 4 }}
 spec:
-  {{- if not .Values.autoscaling.enabled }}
-  replicas: {{ .Values.replicaCount }}
-  {{- end }}
   selector:
     matchLabels:
       {{- include "he-client.selectorLabels" . | nindent 6 }}
@@ -23,22 +20,13 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
-      {{- with .Values.imagePullSecrets }}
-      imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      serviceAccountName: {{ include "he-client.serviceAccountName" . }}
-      securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
-        - name: {{ .Chart.Name }}
-          securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        - name: "{{ .Chart.Name }}-go"
+          image: "{{ .Values.image.goRepository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - name: http
-              containerPort: {{ .Values.service.port }}
+            - name: goPort
+              containerPort: {{ .Values.service.goPort }}
               protocol: TCP
           livenessProbe:
             {{- toYaml .Values.livenessProbe | nindent 12 }}
@@ -46,14 +34,53 @@ spec:
             {{- toYaml .Values.readinessProbe | nindent 12 }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-          {{- with .Values.volumeMounts }}
-          volumeMounts:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-      {{- with .Values.volumes }}
-      volumes:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+          env:
+            - name: EXTERNAL_URL
+              value: ""
+            - name: HTTP_PORT
+              value: "{{ .service.goPort }}"
+            - name: AGGREGATION_SERVICE_URL
+              value: {{ .service.aggregationService }}
+            - name: PYTHON_HOST
+              value: "{{ .he-client.fullname }}"
+            - name: PYTHON_PORT
+              value: "{{ .service.pythonPort }}"
+            - name: PYTHON_API_PATH
+              value: "/api"
+        - name: "{{.Chart.Name }}-python"
+          image: "{{ .Values.image.pythonRepository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: pythonPort
+              containerPort: {{ .Values.service.pythonPort }}
+              protocol: TCP
+          livenessProbe:
+            {{- toYaml .Values.pythonLivenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.pythonReadinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            - name: PYTHON_HOST
+              value: "{{ .he-client.fullname }}"
+            - name: PYTHON_PORT
+              value: "{{ .service.pythonPort }}"
+            - name: PYTHON_API_PATH
+              value: "/api"
+            - name: ML_MODEL_NAME
+              value: "{{ .service.mlModelName }}"
+            - name: ML_MODEL_VERSION
+              value: "{{ .service.mlModelVersion }}"
+            - name: ML_MODEL_PATH
+              value: "{{ .service.mlModelPath }}"
+            - name: ML_EPOCHS
+              value: "{{ .service.mlEpochs }}"
+            - name: ML_LOG_INTERVAL
+              value: "{{ .service.mlLogInterval }}"
+            - name: DATA_SPLIT_NUM_PARTIES
+              value: "{{ .service.numClients }}"
+            - name: DATA_SPLIT_PARTY
+              value: "{{ .service.dataSplitParty }}"
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
