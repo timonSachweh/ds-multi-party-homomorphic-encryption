@@ -29,9 +29,9 @@ spec:
               containerPort: {{ .Values.service.goPort }}
               protocol: TCP
           livenessProbe:
-            {{- toYaml .Values.livenessProbe | nindent 12 }}
+            {{- toYaml .Values.goLivenessProbe | nindent 12 }}
           readinessProbe:
-            {{- toYaml .Values.readinessProbe | nindent 12 }}
+            {{- toYaml .Values.goReadinessProbe | nindent 12 }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           env:
@@ -42,7 +42,7 @@ spec:
             - name: AGGREGATION_SERVICE_URL
               value: {{ .Values.service.aggregationService }}
             - name: PYTHON_HOST
-              value: {{ include "heclient.fullname" . }}
+              value: 'http://{{ include "heclient.fullname" . }}'
             - name: PYTHON_PORT
               value: "{{ .Values.service.pythonPort }}"
             - name: PYTHON_API_PATH
