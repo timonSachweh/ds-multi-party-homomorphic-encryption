@@ -2,8 +2,9 @@ package main
 
 import (
 	"context"
-	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/services"
 	"log"
+
+	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/services"
 
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/api/http"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/api/httpclient"
@@ -16,6 +17,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.SetFlags(log.LstdFlags | log.Lmicroseconds)
 
 	httpClient := httpclient.NewDataSpaceClientService()
 	encryptionService := services.NewEncryptionService(httpClient)

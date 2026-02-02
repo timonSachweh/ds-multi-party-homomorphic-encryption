@@ -1,4 +1,0 @@
-torch>=2.4.0
-torchvision>=0.20.0
-numpy>=2
-flask<=3

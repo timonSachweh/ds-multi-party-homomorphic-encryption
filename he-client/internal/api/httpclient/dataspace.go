@@ -6,9 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/config"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/entities"
+	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/utils"
 )
 
 type DataSpaceClientService interface {
@@ -27,6 +29,7 @@ func NewDataSpaceClientService(privacyMLConfig config.PrivacyMLConfiguration) Da
 }
 
 func (d *DataSpaceClientServiceImpl) UploadData(body entities.ClientModel) error {
+	defer utils.PrintTime(time.Now(), "DataSpaceClientService - UploadData")
 	jsonData, err := json.Marshal(body)
 	if err != nil {
 		return err
@@ -36,6 +39,7 @@ func (d *DataSpaceClientServiceImpl) UploadData(body entities.ClientModel) error
 }
 
 func (d *DataSpaceClientServiceImpl) RegisterClient() (entities.PrivacyParams, error) {
+	defer utils.PrintTime(time.Now(), "DataSpaceClientService - RegisterClient")
 	model := entities.ClientModel{
 		ClientUrl: d.config.ExternalUrl,
 		ModelName: d.config.ModelName,

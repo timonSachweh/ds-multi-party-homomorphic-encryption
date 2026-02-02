@@ -3,11 +3,13 @@ package http
 import (
 	"encoding/gob"
 	"encoding/json"
+	"log"
+	"net/http"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/entities"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/services"
-	"log"
-	"net/http"
+	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/utils"
 )
 
 type ClientManagementHandler interface {
@@ -39,6 +41,7 @@ func (c *clientManagementRouteHandlerImpl) Routes() *chi.Mux {
 }
 
 func (c *clientManagementRouteHandlerImpl) handlePostClientData(w http.ResponseWriter, r *http.Request) {
+	utils.PrintMemoryStats("ClientManagmentHandler - handlePostClientData")
 	var requestData entities.ClientModel
 	if err := json.NewDecoder(r.Body).Decode(&requestData); err != nil {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
@@ -49,9 +52,11 @@ func (c *clientManagementRouteHandlerImpl) handlePostClientData(w http.ResponseW
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+	utils.PrintMemoryStats("ClientManagmentHandler - handlePostClientData")
 }
 
 func (c *clientManagementRouteHandlerImpl) handleRegisterClient(w http.ResponseWriter, r *http.Request) {
+	utils.PrintMemoryStats("ClientManagmentHandler - handleRegisterClient")
 	var requestData entities.ClientModel
 	if err := json.NewDecoder(r.Body).Decode(&requestData); err != nil {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
@@ -71,6 +76,7 @@ func (c *clientManagementRouteHandlerImpl) handleRegisterClient(w http.ResponseW
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 	w.WriteHeader(http.StatusOK)
+	utils.PrintMemoryStats("ClientManagmentHandler - handleRegisterClient")
 }
 
 func (c *clientManagementRouteHandlerImpl) handleTrainClients(w http.ResponseWriter, r *http.Request) {

@@ -6,8 +6,11 @@ BASE_PATH="$(dirname "$(readlink -f "$0")")/.."
 run_services() {
     echo "Starting services..."
 
+    # Create logs directory if it doesn't exist
+    mkdir -p "${BASE_PATH}/logs"    
+
     # Start a screen session for each service
-    screen -dmS "he-aggregation-service" zsh -c "\
+    screen -L -Logfile "${BASE_PATH}/logs/he-aggregation-service.log" -dmS "he-aggregation-service" zsh -c "\
         source '${BASE_PATH}/env/server.env'; \
         go run ${BASE_PATH}/aggregation-server/cmd/main.go"
 
@@ -18,7 +21,7 @@ run_services() {
         PYTHON_PORT=$((9090+i))
         PARTY_IDX=$((i-1))
         echo "Starting client $i with ports: ${GO_PORT} and ${PYTHON_PORT}..."
-        screen -dmS "he-client-${i}-go" zsh -c "\
+        screen -L -Logfile "${BASE_PATH}/logs/he-client-${i}-go.log" -dmS "he-client-${i}-go" zsh -c "\
             source '${BASE_PATH}/env/client1.env'; \
             export HTTP_PORT=${GO_PORT}; \
             export EXTERNAL_URL=http://localhost:${GO_PORT}; \
@@ -26,7 +29,7 @@ run_services() {
             export DATA_SPLIT_PARTY=${PARTY_IDX}; \
             export DATA_SPLIT_NUM_PARTIES=$1; \
             go run ${BASE_PATH}/he-client/cmd/main.go"
-        screen -dmS "he-client-${i}-python" zsh -c "\
+        screen -L -Logfile "${BASE_PATH}/logs/he-client-${i}-python.log" -dmS "he-client-${i}-python" zsh -c "\
             source '${BASE_PATH}/env/client1.env'; \
             export HTTP_PORT=${GO_PORT}; \
             export EXTERNAL_URL=http://localhost:${GO_PORT}; \

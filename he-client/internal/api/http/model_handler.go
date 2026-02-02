@@ -2,10 +2,12 @@ package http
 
 import (
 	"encoding/json"
-	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/services"
 	"io"
 	"log"
 	"net/http"
+
+	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/services"
+	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/utils"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/heclient/internal/entities"
@@ -42,6 +44,7 @@ func (h *aggregationUpdateHandlerImpl) Routes() *chi.Mux {
 }
 
 func (h *aggregationUpdateHandlerImpl) handleUpdateModel(w http.ResponseWriter, r *http.Request) {
+	utils.PrintMemoryStats("ModelHandler - handleUpdateModel")
 	var requestData entities.ModelClientUpdate
 	if err := json.NewDecoder(r.Body).Decode(&requestData); err != nil {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
@@ -51,26 +54,29 @@ func (h *aggregationUpdateHandlerImpl) handleUpdateModel(w http.ResponseWriter, 
 	log.Println("Handler: model update request")
 	h.mlService.UpdateModelWeights(requestData)
 	w.WriteHeader(http.StatusOK)
+	utils.PrintMemoryStats("ModelHandler - handleUpdateModel - after response")
 }
 
 func (h *aggregationUpdateHandlerImpl) handleTrainModel(w http.ResponseWriter, r *http.Request) {
-	log.Println("Handler: model training request")
+	utils.PrintMemoryStats("ModelHandler - handleTrainModel")
 	go h.mlService.RetrainAndSendUpdatedModelWeights()
 	w.WriteHeader(http.StatusOK)
+	utils.PrintMemoryStats("ModelHandler - handleTrainModel - after response")
 }
 
 func (h *aggregationUpdateHandlerImpl) handlePrediction(w http.ResponseWriter, r *http.Request) {
-	log.Println("Handler: model prediction request")
+	utils.PrintMemoryStats("ModelHandler - handlePrediction")
 	var requestData entities.PredictionRequest
 	if err := json.NewDecoder(r.Body).Decode(&requestData); err != nil {
 		log.Fatal(err)
 	}
 	h.mlService.Predict()
 	w.WriteHeader(http.StatusOK)
+	utils.PrintMemoryStats("ModelHandler - handlePrediction - after response")
 }
 
 func (h *aggregationUpdateHandlerImpl) handlePredictionImage(w http.ResponseWriter, r *http.Request) {
-	log.Println("Handler: model image prediction request")
+	utils.PrintMemoryStats("ModelHandler - handlePredictionImage")
 	if err := r.ParseMultipartForm(8 * 1024 * 1024); err != nil { // 8 MB
 		log.Printf("Could not parse multipart form: %v\n", err)
 		return
@@ -99,4 +105,5 @@ func (h *aggregationUpdateHandlerImpl) handlePredictionImage(w http.ResponseWrit
 	}
 	// h.mlService.PredictImage()
 	w.WriteHeader(http.StatusOK)
+	utils.PrintMemoryStats("ModelHandler - handlePredictionImage - after response")
 }

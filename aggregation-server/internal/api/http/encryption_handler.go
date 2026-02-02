@@ -2,9 +2,11 @@ package http
 
 import (
 	"encoding/gob"
+	"net/http"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/services"
-	"net/http"
+	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/utils"
 )
 
 type EncryptionHandler interface {
@@ -29,6 +31,7 @@ func (e *encryptionHandlerImpl) Routes() *chi.Mux {
 }
 
 func (e *encryptionHandlerImpl) handleGetInformation(w http.ResponseWriter, r *http.Request) {
+	utils.PrintMemoryStats("EncryptionHandler - handleGetInformation")
 	encoder := gob.NewEncoder(w)
 	err := encoder.Encode(e.encryptionService.GetInformation())
 	if err != nil {
