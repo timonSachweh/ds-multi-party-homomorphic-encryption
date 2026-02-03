@@ -69,19 +69,19 @@ resources: {}
 goLivenessProbe:
   httpGet:
     path: /health
-    port: goPort
+    port: go-port
 goReadinessProbe:
   httpGet:
     path: /health
-    port: goPort
+    port: go-port
 pythonLivenessProbe:
   httpGet:
     path: /health
-    port: pythonPort
+    port: python-port
 pythonReadinessProbe:
   httpGet:
     path: /health
-    port: pythonPort
+    port: python-port
 
 
 nodeSelector: {}
