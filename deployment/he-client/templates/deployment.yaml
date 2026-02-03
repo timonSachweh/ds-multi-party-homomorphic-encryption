@@ -25,7 +25,7 @@ spec:
           image: "{{ .Values.image.goRepository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - name: goPort
+            - name: go-port
               containerPort: {{ .Values.service.goPort }}
               protocol: TCP
           livenessProbe:
@@ -51,7 +51,7 @@ spec:
           image: "{{ .Values.image.pythonRepository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - name: pythonPort
+            - name: python-port
               containerPort: {{ .Values.service.pythonPort }}
               protocol: TCP
           livenessProbe:

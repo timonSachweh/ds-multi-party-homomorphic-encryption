@@ -8,12 +8,12 @@ spec:
   type: {{ .Values.service.type }}
   ports:
     - port: {{ .Values.service.goPort }}
-      targetPort: goPort
+      targetPort: go-port
       protocol: TCP
-      name: goPort
+      name: go-port
     - port: {{ .Values.service.pythonPort }}
-      targetPort: pythonPort
+      targetPort: python-port
       protocol: TCP
-      name: pythonPort
+      name: python-port
   selector:
     {{- include "heclient.selectorLabels" . | nindent 4 }}
