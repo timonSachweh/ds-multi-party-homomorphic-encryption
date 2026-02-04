@@ -29,7 +29,7 @@ service:
   # This sets the ports more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#field-spec-ports
   goPort: 8080
   pythonPort: 5000
-  aggregationService: http://aggregation-server:8080/v1
+  aggregationService: http://ds-agg-aggregation-server:8080/v1
   mlModelName: mnist
   mlModelVersion: 0.1
   mlModelPath: ./model.pt
