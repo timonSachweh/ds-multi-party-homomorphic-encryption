@@ -41,6 +41,8 @@ spec:
               value: "{{ .Values.service.goPort }}"
             - name: AGGREGATION_SERVICE_URL
               value: {{ .Values.service.aggregationService }}
+            - name: ML_MODEL_NAME
+              value: "{{ .Values.service.mlModelName }}"
             - name: PYTHON_HOST
               value: 'http://{{ include "heclient.fullname" . }}'
             - name: PYTHON_PORT
