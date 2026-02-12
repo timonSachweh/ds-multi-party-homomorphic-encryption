@@ -7,16 +7,29 @@ metadata:
 spec:
   containers:
   - name: aggregation-server
-    image: he-aggregation-server:latest
+    image: ghcr.io/timonsachweh/ds-multi-party-homomorphic-encryption/aggregation-server:main
     env:
     - name: HTTP_PORT
-      value: 8080
-    - name: CLIENT_SERVICE_URLS
-      value: http://he-client-1:8081
+      value: "8080"
+    - name: MIN_CLIENTS_NEEDED
+      value: "2"
     livenessProbe:
       httpGet:
         path: /health
         port: 8080
     ports:
     - containerPort: 8080
-      hostPort: 8080
+      name: he-agg-endpoint
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: he-aggregation-server
+spec:
+  selector:
+    app.kubernetes.io/name: he-aggregation-server
+  ports:
+  - name: http-service-endpoint
+    protocol: TCP
+    port: 8080
+    targetPort: he-agg-endpoint

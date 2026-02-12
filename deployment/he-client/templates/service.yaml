@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "heclient.fullname" . }}
+  labels:
+    {{- include "heclient.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.goPort }}
+      targetPort: go-port
+      protocol: TCP
+      name: go-port
+    - port: {{ .Values.service.pythonPort }}
+      targetPort: python-port
+      protocol: TCP
+      name: python-port
+  selector:
+    {{- include "heclient.selectorLabels" . | nindent 4 }}
