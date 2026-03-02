@@ -2,17 +2,23 @@ import torch
 from torch.optim.lr_scheduler import StepLR
 import torch.nn.functional as F
 import config
-from .model import Net
+from .model import LeNet, MnistNet
 from utils import get_device, get_transforms, get_kwargs
-from .dataloader import get_dataloaders
+from .dataloader import get_dataloaders, DatasetType
 
 
 class ModelService():
-    def __init__(self, model_config: config.ModelConfig, dataset_config: config.DataConfig):
+    def __init__(self, model_config: config.ModelConfig, dataset_config: config.DataConfig, dataset_type: DatasetType = DatasetType.MNIST):
         self.config = model_config
         self.dataset_config = dataset_config
         self.device = get_device(self.config.no_cuda, self.config.no_mps)
-        self.model = Net().to(self.device)
+        self.dataset_type = dataset_type
+        if dataset_type == DatasetType.MNIST:
+            self.model = MnistNet().to(self.device)
+        elif dataset_type == DatasetType.CIFAR10:
+            self.model = LeNet().to(self.device)
+        else:
+            raise ValueError(f"Unsupported dataset type: {dataset_type}")
         self.transform = get_transforms()
 
     def train(self):
@@ -20,7 +26,8 @@ class ModelService():
 
         train_kwargs, test_kwargs = get_kwargs(self.config, self.device)
 
-        train_loader, test_loader = get_dataloaders(transforms=self.transform, party_idx=self.dataset_config.party,
+        train_loader, test_loader = get_dataloaders(tf=self.transform, dataset_type=self.dataset_type,
+                                                    party_idx=self.dataset_config.party,
                                                     num_parties=self.dataset_config.num_parties,
                                                     train_kwargs=train_kwargs, test_kwargs=test_kwargs)
 

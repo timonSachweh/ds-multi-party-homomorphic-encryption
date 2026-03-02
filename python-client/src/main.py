@@ -23,7 +23,7 @@ utils.setup_logging()
 
 utils.print_memory_stats("Before starting the server")
 
-model_service = ml.ModelService(c.model, c.data)
+model_service = ml.ModelService(c.model, c.data, dataset_type=ml.DatasetType.CIFAR10)
 
 utils.print_memory_stats("After model-service")
 
