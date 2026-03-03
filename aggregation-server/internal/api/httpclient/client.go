@@ -6,9 +6,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/Pro7ech/lattigo/mhe"
 	"io"
 	"net/http"
+	"time"
+
+	"github.com/Pro7ech/lattigo/mhe"
 
 	"github.com/timonSachweh/ds-multi-party-homomorphic-encryption/aggregationserver/internal/entities"
 )
@@ -135,7 +137,14 @@ func (d *DataSpaceClientServiceImpl) SendPublicKeyToClient(url string, pk *entit
 	if url == "" {
 		return errors.New("url is empty")
 	}
-	resp, err := http.Post(fmt.Sprintf("%s/v1/enc/public-key", url), "application/json", &data)
+	var resp *http.Response
+	for i := 0; i < 3; i++ {
+		resp, err = http.Post(fmt.Sprintf("%s/v1/enc/public-key", url), "application/json", &data)
+		if err == nil {
+			break
+		}
+		time.Sleep(2 * time.Second)
+	}
 	if err != nil {
 		return err
 	}
