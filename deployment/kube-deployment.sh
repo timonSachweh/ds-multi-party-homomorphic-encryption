@@ -15,18 +15,17 @@ run_services() {
     $shelm install $prefix ${BASE_PATH}/deployment/aggregation-server --set numClients=$1
     export NODE_PORT=$($skube get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services ds-aggregation-server)
 
-    sleep 2
+    sleep 20
     for (( i=1; i<=$1; i++ ))
     do
         $shelm install $prefix-c${i} ${BASE_PATH}/deployment/he-client --set clientId=$((i-1)) --set totalClients=$1 --set service.aggregationService=http://$prefix-aggregation-server:8080/v1
-        sleep 8
+        sleep 60
     done
 
     sleep 2
 
-    sessions=$shelm ls
     echo "Running sessions:"
-    echo "${sessions}"
+    $shelm ls
 }
 
 # Function to stop services

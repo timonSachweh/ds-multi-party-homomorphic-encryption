@@ -5,12 +5,13 @@ BASE_PATH="$(dirname "$(readlink -f "$0")")/.."
 # Function to start services
 run_services() {
     echo "Starting services..."
-
+    echo "$BASE_PATH"
     # Create logs directory if it doesn't exist
-    mkdir -p "${BASE_PATH}/logs"    
+    LOG_PATH="${BASE_PATH}/logs/$(date +%Y%m%d_%H%M%S)"
+    mkdir -p ${LOG_PATH} 
 
     # Start a screen session for each service
-    screen -L -Logfile "${BASE_PATH}/logs/he-aggregation-service.log" -dmS "he-aggregation-service" zsh -c "\
+    screen -L -Logfile "${LOG_PATH}/he-aggregation-service.log" -dmS "he-aggregation-service" zsh -c "\
         source '${BASE_PATH}/env/server.env'; \
         go run ${BASE_PATH}/aggregation-server/cmd/main.go"
 
@@ -21,7 +22,7 @@ run_services() {
         PYTHON_PORT=$((9090+i))
         PARTY_IDX=$((i-1))
         echo "Starting client $i with ports: ${GO_PORT} and ${PYTHON_PORT}..."
-        screen -L -Logfile "${BASE_PATH}/logs/he-client-${i}-go.log" -dmS "he-client-${i}-go" zsh -c "\
+        screen -L -Logfile "${LOG_PATH}/he-client-${i}-go.log" -dmS "he-client-${i}-go" zsh -c "\
             source '${BASE_PATH}/env/client1.env'; \
             export HTTP_PORT=${GO_PORT}; \
             export EXTERNAL_URL=http://localhost:${GO_PORT}; \
@@ -29,15 +30,14 @@ run_services() {
             export DATA_SPLIT_PARTY=${PARTY_IDX}; \
             export DATA_SPLIT_NUM_PARTIES=$1; \
             go run ${BASE_PATH}/he-client/cmd/main.go"
-        screen -L -Logfile "${BASE_PATH}/logs/he-client-${i}-python.log" -dmS "he-client-${i}-python" zsh -c "\
+        screen -L -Logfile "${LOG_PATH}/he-client-${i}-python.log" -dmS "he-client-${i}-python" zsh -c "\
             source '${BASE_PATH}/env/client1.env'; \
             export HTTP_PORT=${GO_PORT}; \
             export EXTERNAL_URL=http://localhost:${GO_PORT}; \
             export PYTHON_PORT=${PYTHON_PORT}; \
             export DATA_SPLIT_PARTY=${PARTY_IDX}; \
             export DATA_SPLIT_NUM_PARTIES=$1; \
-            pyenv activate ml; \
-            python ${BASE_PATH}/python-client/src/main.py"
+            uv run ${BASE_PATH}/python-client/src/main.py"
         sleep 8
     done
     
@@ -62,6 +62,11 @@ stop_services() {
     echo "All services have been stopped."
 }
 
+request_training() {
+    echo "Requesting training"
+    curl -X GET http://localhost:8080/v1/clients/train
+}
+
 # Check the first parameter
 if [ "$1" = "start" ] || [ "$1" = "run" ] || [ "$1" = "up" ]; then
     NUM_CLIENTS=2
@@ -69,6 +74,8 @@ if [ "$1" = "start" ] || [ "$1" = "run" ] || [ "$1" = "up" ]; then
         NUM_CLIENTS=$2
     fi
     run_services $NUM_CLIENTS
+elif [ "$1" = "train" ] || [ "$1" = "training" ]; then
+    request_training
 elif [ "$1" = "stop" ] || [ "$1" = "down" ]; then
     stop_services
 else
